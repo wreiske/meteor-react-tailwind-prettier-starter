@@ -7,7 +7,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "node scripts/prepare-husky.cjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",
