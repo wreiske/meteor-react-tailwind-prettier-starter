@@ -1,6 +1,6 @@
 <div align="center">
 
-# Meteor + React 19 + Tailwind CSS 4 Starter
+# Meteor 3.4 + React 19 + Tailwind CSS 4 + TypeScript Starter
 
 Modern, minimal boilerplate for building real‑time Meteor apps with React 19, Tailwind 4, and TypeScript.
 
