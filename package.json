@@ -5,8 +5,10 @@
     "start": "meteor run",
     "prune:legacy": "bash ./scripts/prune-legacy.sh --yes",
     "lint:fix": "eslint . --fix",
+    "lint": "eslint .",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
+    "typecheck": "tsc --noEmit",
     "prepare": "node scripts/prepare-husky.cjs"
   },
   "dependencies": {
