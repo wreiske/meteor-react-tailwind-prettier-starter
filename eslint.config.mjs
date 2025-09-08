@@ -12,6 +12,7 @@ import prettier from 'eslint-plugin-prettier';
 
 export default [
   {
+    // Consolidated ignores (migrated from legacy .eslintignore file)
     ignores: [
       'dist',
       '.meteor',
@@ -20,6 +21,8 @@ export default [
       'apps/web/.meteor/**',
       '**/scheduler.worker.js',
       '_build',
+      'build',
+      'coverage',
     ],
   },
   {
