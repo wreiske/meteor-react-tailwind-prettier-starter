@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -32,11 +32,11 @@ jobs:
             curl https://install.meteor.com/ | sh
           fi
       - name: Install deps
-        run: meteor npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Lint
-        run: npx eslint .
+        run: npm run lint
       - name: Type Check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
   build:
     name: Meteor Build (Linux)
@@ -47,8 +47,8 @@ jobs:
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
-            node-version: 22
-            cache: 'npm'
+          node-version: 22
+          cache: 'npm'
       - name: Cache Meteor
         uses: actions/cache@v4
         with:
@@ -60,7 +60,7 @@ jobs:
             curl https://install.meteor.com/ | sh
           fi
       - name: Install deps
-        run: meteor npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Build (directory)
         run: |
           meteor build ../build --directory
