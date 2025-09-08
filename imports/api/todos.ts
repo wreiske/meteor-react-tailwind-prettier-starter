@@ -1,4 +1,4 @@
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import { Meteor } from 'meteor/meteor';
 import { Mongo } from 'meteor/mongo';
 
@@ -14,9 +14,24 @@ export interface TodoDoc {
 export const Todos = new Mongo.Collection<TodoDoc>('todos');
 
 if (Meteor.isServer) {
-  Meteor.publish('todos.list', function () {
+  // Publication optionally filtered by status ("active" => done:false, "completed" => done:true)
+  Meteor.publish('todos.list', function (opts?: { status?: 'active' | 'completed' }) {
     if (!this.userId) return this.ready();
-    return Todos.find({ userId: this.userId }, { sort: { order: 1, createdAt: -1 } });
+    // Validate opts defensively; tolerate undefined
+    if (opts) {
+      try {
+        check(opts, {
+          status: Match.Maybe(Match.OneOf('active', 'completed')),
+        });
+      } catch {
+        // On invalid args just publish nothing rather than throwing (avoids noisy client errors)
+        return this.ready();
+      }
+    }
+    const selector: Mongo.Selector<TodoDoc> = { userId: this.userId };
+    if (opts?.status === 'active') selector.done = false;
+    else if (opts?.status === 'completed') selector.done = true;
+    return Todos.find(selector, { sort: { order: 1, createdAt: -1 } });
   });
 
   Meteor.methods({

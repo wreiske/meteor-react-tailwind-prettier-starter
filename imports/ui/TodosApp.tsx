@@ -10,7 +10,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { type TodoDoc, Todos } from '../api/todos';
 import { Button } from './Button';
@@ -21,26 +21,44 @@ import Tooltip from './Tooltip';
 
 export const TodosApp: React.FC = () => {
   // Single reactive tracker for both data + readiness so we avoid calling handle.ready() outside a reactive context
+  // Read initial filter from query param (default 'all')
+  const initialFilter = (() => {
+    if (typeof window === 'undefined') return 'all';
+    const p = new URLSearchParams(window.location.search).get('filter');
+    return p === 'active' || p === 'completed' ? p : 'all';
+  })();
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>(initialFilter);
   const { allTodos, isReady } = useTracker(() => {
-    const handle = Meteor.subscribe('todos.list');
+    const handle = Meteor.subscribe(
+      'todos.list',
+      filter === 'all' ? undefined : { status: filter },
+    );
     const docs = Todos.find({}, { sort: { order: 1, createdAt: -1 } }).fetch();
     return { allTodos: docs, isReady: handle.ready() };
-  }, []);
+  }, [filter]);
   const [newTodo, setNewTodo] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
-  const baseTodos = allTodos; // sorted from minimongo
+  const baseTodos = allTodos; // already sorted from minimongo via publication
   const [dragIds, setDragIds] = useState<string[] | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const todos = useMemo(() => {
-    const list = dragIds
+    // When server-side filtered (active/completed), avoid client-side override list mapping for drag reorder (disabled anyway while filtered)
+    if (filter !== 'all') return baseTodos;
+    return dragIds
       ? (dragIds.map((id) => baseTodos.find((t) => t._id === id)).filter(Boolean) as TodoDoc[])
       : baseTodos;
-    if (filter === 'active') return allTodos.filter((t) => !t.done);
-    if (filter === 'completed') return allTodos.filter((t) => t.done);
-    return list;
-  }, [allTodos, filter, dragIds, baseTodos]);
+  }, [baseTodos, dragIds, filter]);
+
+  // Keep URL in sync when filter changes (shallow replace - no reload)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (filter === 'all') url.searchParams.delete('filter');
+    else url.searchParams.set('filter', filter);
+    const newUrl = url.pathname + (url.search ? `?${url.searchParams.toString()}` : '') + url.hash;
+    window.history.replaceState({}, '', newUrl);
+  }, [filter]);
 
   const addTodo = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +74,7 @@ export const TodosApp: React.FC = () => {
 
   // Drag handlers
   const beginDrag = (id: string) => {
+    if (filter !== 'all') return; // disable reordering while filtered subset is shown
     setDragIds(allTodos.map((t) => t._id!));
     setDraggingId(id);
   };
@@ -201,38 +220,42 @@ export const TodosApp: React.FC = () => {
                 draggableProps={{
                   draggable: true,
                   onDragStart: (e) => {
+                    if (filter !== 'all') return e.preventDefault();
                     e.dataTransfer.effectAllowed = 'move';
                     beginDrag(t._id!);
                   },
                   onDragOver: (e) => {
+                    if (filter !== 'all') return;
                     e.preventDefault();
                     dragOver(t._id!);
                   },
                   onDrop: (e) => {
+                    if (filter !== 'all') return;
                     e.preventDefault();
                     dragOver(t._id!);
                     endDrag(false);
                   },
-                  onDragEnd: () => endDrag(false),
+                  onDragEnd: () => filter === 'all' && endDrag(false),
                   onTouchStart: (e) => {
+                    if (filter !== 'all') return;
                     beginDrag(t._id!);
                     // Prevent iOS long-press actions
                     e.stopPropagation();
                   },
                   onTouchMove: (e) => {
-                    if (!draggingId) return;
+                    if (!draggingId || filter !== 'all') return;
                     const touch = e.touches[0];
                     touchDragOver(touch.clientY, touch.clientX);
                     // Prevent scroll while reordering
                     e.preventDefault();
                   },
-                  onTouchEnd: () => endDrag(false),
-                  onTouchCancel: () => endDrag(true),
+                  onTouchEnd: () => filter === 'all' && endDrag(false),
+                  onTouchCancel: () => filter === 'all' && endDrag(true),
                 }}
               />
             ))}
         </ul>
-        {isReady && todos.length > 0 && (
+        {isReady && todos.length > 0 && filter === 'all' && (
           <p className="mt-2 text-[11px] text-neutral-400 dark:text-neutral-500">
             Tip: drag (or touch & drag) items to reorder.
           </p>

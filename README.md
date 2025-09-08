@@ -4,6 +4,8 @@
 
 Modern, minimal boilerplate for building real‑time Meteor apps with React 19, Tailwind 4, and TypeScript.
 
+▶️ Live demo: https://todo-sample.meteorapp.com
+
 | Stack       | Version       | Notes                                |
 | ----------- | ------------- | ------------------------------------ |
 | Meteor      | 3.4 (Node 22) | ESM, modern rspack build toolchain   |
@@ -103,8 +105,8 @@ apps/meteor-react-tailwind-prettier-starter/
 Requirements: Git + Meteor (or use `npx meteor`) + Node 22 (bundled by Meteor 3).
 
 ```bash
-git clone <repo-url> meteor-react-tailwind-prettier-starter
-cd meteor-react-tailwind-prettier-starter/apps/meteor-react-tailwind-prettier-starter
+git clone https://github.com/wreiske/meteor-react-tailwind-prettier-starter
+cd meteor-react-tailwind-prettier-starter
 meteor npm install
 meteor run
 ```
