@@ -1,0 +1,5 @@
+dist
+.meteor
+node_modules
+*.lock
+coverage

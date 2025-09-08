@@ -1,0 +1,4 @@
+eslint.config.mjs
+.eslintrc.cjs
+.eslintrc.js
+.eslintrc.json

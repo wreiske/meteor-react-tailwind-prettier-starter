@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": false,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "baseUrl": "./",
+    "paths": {
+      "@api/*": ["imports/api/*"],
+      "@schemas/*": ["imports/schemas/*"],
+      "@ui/*": ["imports/ui/*"],
+      "@lib/*": ["imports/lib/*"]
+    }
+  },
+  "include": ["imports", "client", "server"],
+  "exclude": ["node_modules"]
+}

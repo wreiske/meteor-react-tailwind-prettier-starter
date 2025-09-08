@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+body { -webkit-font-smoothing: antialiased; }
+
+/* Cursor affordance for all buttons (Tailwind sets this for button elements but include roles) */
+button,[role='button'] { cursor:pointer; }
+button:disabled,[role='button'][aria-disabled='true'] { cursor:not-allowed; }
