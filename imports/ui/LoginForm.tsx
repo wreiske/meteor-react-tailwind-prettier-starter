@@ -118,7 +118,7 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
                     type="button"
                     onClick={loginWithToken}
                     disabled={!tokenValue || loggingInToken}
-                    className="flex-1 bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-40"
+                    className="flex-1 bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-40 py-3 text-sm md:text-base"
                   >
                     {loggingInToken ? 'Signing in…' : 'Sign in'}
                   </Button>
@@ -131,7 +131,7 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
                       setJustResent(true);
                       sendMagicLink(e);
                     }}
-                    className="flex-1 bg-neutral-200 text-neutral-700 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600"
+                    className="flex-1 bg-neutral-200 text-neutral-700 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600 py-3 text-sm md:text-base"
                   >
                     {sendingLink ? 'Resending…' : justResent ? 'Sent!' : 'Resend'}
                   </Button>
