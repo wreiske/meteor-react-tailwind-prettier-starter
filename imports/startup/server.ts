@@ -16,12 +16,17 @@ Meteor.publish(null, function () {
   return Meteor.users.find({ _id: this.userId }, { fields: { emails: 1, createdAt: 1 } });
 });
 
-Meteor.startup(() => {
-  // Ensure indexes (idempotent)
-  const raw = Todos.rawCollection();
-  // Create compound index for efficient user listing
-  raw.createIndex?.({ userId: 1, createdAt: -1 }).catch(() => {});
-  raw.createIndex?.({ userId: 1, done: 1 }).catch(() => {});
+Meteor.startup(async () => {
+  // Ensure indexes (idempotent) using Meteor's createIndexAsync helper
+  try {
+    await Todos.createIndexAsync({ userId: 1, createdAt: -1 });
+    await Todos.createIndexAsync({ userId: 1, done: 1 });
+  } catch (e) {
+    // Non-fatal – log verbosely only in development
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Index creation error', e);
+    }
+  }
 
   // Rate limiting for todo methods (defense-in-depth)
   const METHODS = ['todos.insert', 'todos.toggle', 'todos.remove', 'todos.clearCompleted'];
