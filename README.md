@@ -46,16 +46,16 @@ Core features kept intentionally lean:
 
 <div align="center">
 
-| Login (Dark)                                                               | Todos (Empty)                                                                        | Todos (Items)                                                                      |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| <img src="./screenshots/todo-sample.png" alt="Login screen" width="300" /> | <img src="./screenshots/todo-sample (1).png" alt="Empty todos screen" width="300" /> | <img src="./screenshots/todo-sample (2).png" alt="Todos with items" width="300" /> |
+| Login                                                                      | Magic Link (Token Entry)                                                                                       | Empty Todos                                                                        |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| <img src="./screenshots/todo-sample.png" alt="Login screen" width="300" /> | <img src="./screenshots/todo-sample (1).png" alt="Passwordless token entry confirmation screen" width="300" /> | <img src="./screenshots/todo-sample (2).png" alt="Empty todos list" width="300" /> |
 
 <br />
 
 Additional views:
 
-<img src="./screenshots/todo-sample (3).png" alt="More todos variant" width="300" />
-<img src="./screenshots/todo-sample (4).png" alt="Another todos variant" width="300" />
+<img src="./screenshots/todo-sample (3).png" alt="Todos populated (variant 1)" width="300" />
+<img src="./screenshots/todo-sample (4).png" alt="Todos populated (variant 2)" width="300" />
 
 </div>
 
