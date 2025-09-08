@@ -1,3 +1,5 @@
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Accounts } from 'meteor/accounts-base';
 import { Meteor } from 'meteor/meteor';
 import React, { useState } from 'react';
@@ -7,6 +9,7 @@ import { Card } from './Card';
 import { Input } from './Input';
 import { SmallMuted } from './SmallMuted';
 import { ThemeToggle } from './ThemeToggle';
+import Tooltip from './Tooltip';
 
 interface LoginFormProps {
   onLoggedIn?: () => void;
@@ -70,7 +73,7 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center overflow-x-hidden bg-neutral-50 px-4 py-12 font-sans text-neutral-800 dark:bg-neutral-900 dark:text-neutral-100">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center overflow-x-hidden px-4 py-12 font-sans text-neutral-800 dark:text-neutral-100">
       <header className="w-full max-w-sm px-2 pb-4">
         <h1 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
           Todo Sample App
@@ -87,7 +90,20 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
               Passwordless magic link
             </p>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Tooltip content="View source on GitHub" placement="right" delay={140}>
+              <a
+                href="https://github.com/wreiske/meteor-react-tailwind-prettier-starter"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View source on GitHub"
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 bg-white text-neutral-600 shadow-sm transition-colors hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              >
+                <FontAwesomeIcon icon={faGithub} className="text-base" />
+              </a>
+            </Tooltip>
+            <ThemeToggle />
+          </div>
         </div>
         <form onSubmit={sendMagicLink} noValidate className="space-y-5" aria-live="polite">
           {magicLinkSent ? (

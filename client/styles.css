@@ -1,8 +1,20 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-body { -webkit-font-smoothing: antialiased; }
+body {
+  -webkit-font-smoothing: antialiased;
+}
+/* Global background + base text colors so centered layouts don't show white gutters in dark mode */
+body {
+  @apply bg-neutral-50 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-100;
+}
 
 /* Cursor affordance for all buttons (Tailwind sets this for button elements but include roles) */
-button,[role='button'] { cursor:pointer; }
-button:disabled,[role='button'][aria-disabled='true'] { cursor:not-allowed; }
+button,
+[role='button'] {
+  cursor: pointer;
+}
+button:disabled,
+[role='button'][aria-disabled='true'] {
+  cursor: not-allowed;
+}

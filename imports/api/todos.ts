@@ -8,6 +8,7 @@ export interface TodoDoc {
   text: string;
   done: boolean;
   createdAt: Date;
+  order?: number; // lower comes first
 }
 
 export const Todos = new Mongo.Collection<TodoDoc>('todos');
@@ -15,7 +16,7 @@ export const Todos = new Mongo.Collection<TodoDoc>('todos');
 if (Meteor.isServer) {
   Meteor.publish('todos.list', function () {
     if (!this.userId) return this.ready();
-    return Todos.find({ userId: this.userId }, { sort: { createdAt: -1 } });
+    return Todos.find({ userId: this.userId }, { sort: { order: 1, createdAt: -1 } });
   });
 
   Meteor.methods({
@@ -25,11 +26,18 @@ if (Meteor.isServer) {
       const clean = text.trim();
       if (!clean) throw new Meteor.Error('empty', 'Todo text required');
       if (clean.length > 200) throw new Meteor.Error('too-long', 'Keep it under 200 chars');
+      // Determine next order (max + 1). If no existing, start at 1.
+      const last = await Todos.findOneAsync(
+        { userId: this.userId },
+        { sort: { order: -1 }, fields: { order: 1 } },
+      );
+      const nextOrder = typeof last?.order === 'number' ? last.order + 1 : 1;
       return Todos.insertAsync({
         userId: this.userId,
         text: clean,
         done: false,
         createdAt: new Date(),
+        order: nextOrder,
       });
     },
     async 'todos.toggle'(todoId: string) {
@@ -48,6 +56,35 @@ if (Meteor.isServer) {
     async 'todos.clearCompleted'() {
       if (!this.userId) throw new Meteor.Error('not-authorized');
       await Todos.removeAsync({ userId: this.userId, done: true });
+    },
+    async 'todos.reorder'(orderedIds: string[]) {
+      check(orderedIds, [String]);
+      if (!this.userId) throw new Meteor.Error('not-authorized');
+      if (orderedIds.length === 0) return true;
+      const userTodos = await Todos.find(
+        { userId: this.userId },
+        { fields: { _id: 1 } },
+      ).fetchAsync();
+      const userIds = new Set(userTodos.map((t) => t._id));
+      for (const id of orderedIds) {
+        if (!userIds.has(id))
+          throw new Meteor.Error('invalid-order', 'Invalid todo id in ordering');
+      }
+      // Apply new order indices starting at 1. Use bulkWrite for efficiency.
+      const bulk = Todos.rawCollection().initializeUnorderedBulkOp();
+      orderedIds.forEach((id, idx) => {
+        bulk.find({ _id: id, userId: this.userId }).updateOne({ $set: { order: idx + 1 } });
+      });
+      // Assign remaining (if any not included) after—should not happen if client sends full list.
+      userTodos
+        .filter((t) => !orderedIds.includes(t._id!))
+        .forEach((t) => {
+          bulk
+            .find({ _id: t._id, userId: this.userId })
+            .updateOne({ $set: { order: orderedIds.length + 1 } });
+        });
+      await bulk.execute();
+      return true;
     },
   });
 }

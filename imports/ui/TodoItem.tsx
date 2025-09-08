@@ -9,12 +9,34 @@ interface TodoItemProps {
   todo: TodoDoc;
   onToggle(id: string): void;
   onRemove(id: string): void;
+  draggableProps?: {
+    draggable: boolean;
+    onDragStart(e: React.DragEvent): void;
+    onDragOver(e: React.DragEvent): void;
+    onDrop(e: React.DragEvent): void;
+    onDragEnd(e: React.DragEvent): void;
+    // Touch / pointer fallbacks
+    onTouchStart?(e: React.TouchEvent): void;
+    onTouchMove?(e: React.TouchEvent): void;
+    onTouchEnd?(e: React.TouchEvent): void;
+    onTouchCancel?(e: React.TouchEvent): void;
+  };
+  isDragging?: boolean;
 }
 
-export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onRemove }) => (
+export const TodoItem: React.FC<TodoItemProps> = ({
+  todo,
+  onToggle,
+  onRemove,
+  draggableProps,
+  isDragging,
+}) => (
   <li
-    className="group relative flex items-center gap-3 bg-white px-4 py-2 text-sm dark:bg-neutral-800"
+    className={`group relative flex select-none items-center gap-3 bg-white px-4 py-2 text-sm dark:bg-neutral-800 ${
+      isDragging ? 'opacity-60 ring-2 ring-blue-500/40' : ''
+    }`}
     data-id={todo._id}
+    {...(draggableProps || {})}
   >
     <button
       onClick={() => onToggle(todo._id!)}
