@@ -4,12 +4,12 @@
 
 Modern, minimal boilerplate for building real‑time Meteor apps with React 19, Tailwind 4, and TypeScript.
 
-| Stack       | Version       | Notes                                  |
-| ----------- | ------------- | -------------------------------------- |
-| Meteor      | 3.4 (Node 22) | ESM, modern rspack build toolchain     |
-| React       | 19            | Suspense / concurrent features ready   |
-| TailwindCSS | 4.x           | Oxide (Lightning CSS) engine           |
-| TypeScript  | 5.x           | Strict mode                            |
+| Stack       | Version       | Notes                                |
+| ----------- | ------------- | ------------------------------------ |
+| Meteor      | 3.4 (Node 22) | ESM, modern rspack build toolchain   |
+| React       | 19            | Suspense / concurrent features ready |
+| TailwindCSS | 4.x           | Oxide (Lightning CSS) engine         |
+| TypeScript  | 5.x           | Strict mode                          |
 
 Includes passwordless (magic link) auth + a realtime Todo example.
 
@@ -32,15 +32,32 @@ Includes passwordless (magic link) auth + a realtime Todo example.
 Core features kept intentionally lean:
 
 - React 19 + TypeScript hot reload development loop
-- Tailwind CSS 4 with a *near-zero* custom CSS footprint (only minimal globals) 
-- Accessible dark/light Theme Toggle (persists via localStorage, prevents FOUC) 
-- Passwordless email login (magic link + optional one-time code entry) 
+- Tailwind CSS 4 with a _near-zero_ custom CSS footprint (only minimal globals)
+- Accessible dark/light Theme Toggle (persists via localStorage, prevents FOUC)
+- Passwordless email login (magic link + optional one-time code entry)
 - Realtime Todo list demonstrating Meteor publications + methods + latency compensation
 - Reusable UI primitives (`Button`, `Card`, `Input`, `Tooltip`, `ThemeToggle`, etc.)
 - Headless, utility-first Tooltip component (pure Tailwind – no extra global CSS)
 - Strict linting + formatting (ESLint, Prettier, simple-import-sort)
 - Production touches: (example) rate limiting + Mongo index hooks (extend as needed)
 - Dark mode class + data attribute for flexible theming
+
+## Screenshots
+
+<div align="center">
+
+| Login (Dark)                                                               | Todos (Empty)                                                                        | Todos (Items)                                                                      |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| <img src="./screenshots/todo-sample.png" alt="Login screen" width="300" /> | <img src="./screenshots/todo-sample (1).png" alt="Empty todos screen" width="300" /> | <img src="./screenshots/todo-sample (2).png" alt="Todos with items" width="300" /> |
+
+<br />
+
+Additional views:
+
+<img src="./screenshots/todo-sample (3).png" alt="More todos variant" width="300" />
+<img src="./screenshots/todo-sample (4).png" alt="Another todos variant" width="300" />
+
+</div>
 
 ## Project Structure
 
@@ -111,18 +128,18 @@ meteor run
 
 Methods (latency-compensated):
 
-| Method                 | Action                      |
-| ---------------------- | --------------------------- |
-| `todos.insert(text)`   | Create a todo               |
-| `todos.toggle(id)`     | Toggle completion           |
-| `todos.remove(id)`     | Remove one                  |
-| `todos.clearCompleted` | Remove all completed items  |
+| Method                 | Action                     |
+| ---------------------- | -------------------------- |
+| `todos.insert(text)`   | Create a todo              |
+| `todos.toggle(id)`     | Toggle completion          |
+| `todos.remove(id)`     | Remove one                 |
+| `todos.clearCompleted` | Remove all completed items |
 
 Publication:
 
-| Publication  | Returns                             |
-| ------------ | ----------------------------------- |
-| `todos.list` | All todos for the authenticated user|
+| Publication  | Returns                              |
+| ------------ | ------------------------------------ |
+| `todos.list` | All todos for the authenticated user |
 
 Collection shape (reference):
 
@@ -172,17 +189,17 @@ Tooltip component: pure Tailwind utilities (no external lib, no global tooltip s
 
 ## Customization Roadmap (Pick & Choose)
 
-| Goal                | Direction |
-| ------------------- | --------- |
-| SSR / streaming     | Integrate Meteor SSR + React 19 streaming APIs |
-| Testing             | Add `meteortesting:mocha` or Jest for pure logic |
-| Design System       | Replace primitives w/ your component library |
-| Auth Variants       | Add OAuth, passwords, SMS codes |
-| Performance         | Add code splitting / dynamic imports |
+| Goal            | Direction                                        |
+| --------------- | ------------------------------------------------ |
+| SSR / streaming | Integrate Meteor SSR + React 19 streaming APIs   |
+| Testing         | Add `meteortesting:mocha` or Jest for pure logic |
+| Design System   | Replace primitives w/ your component library     |
+| Auth Variants   | Add OAuth, passwords, SMS codes                  |
+| Performance     | Add code splitting / dynamic imports             |
 
 ## Contributing
 
-PRs welcome. Keep scope tight (clarity > features). The aim is a *teachable* baseline, not an everything kitchen sink starter.
+PRs welcome. Keep scope tight (clarity > features). The aim is a _teachable_ baseline, not an everything kitchen sink starter.
 
 ## License
 
