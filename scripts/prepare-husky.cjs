@@ -36,8 +36,28 @@ try {
     process.exit(0);
   }
   // Run husky install (idempotent)
-  execSync('npx husky install', { stdio: 'inherit' });
-  log('husky install completed.');
+  // Husky v9 deprecates `husky install` (only `husky init` for first-time setup).
+  // We keep backward compatibility for <9 while avoiding the deprecation warning on >=9.
+  try {
+    // Detect husky major version via filesystem (avoids ESM/require edge cases)
+    const path = require('node:path');
+    const fs = require('node:fs');
+    const pkgPath = path.join(process.cwd(), 'node_modules', 'husky', 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      const huskyPkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      const major = parseInt((huskyPkg.version || '0').split('.')[0], 10) || 0;
+      if (major >= 9) {
+        log(`husky v${huskyPkg.version} detected – skipping deprecated 'husky install'.`);
+      } else {
+        execSync('npx husky install', { stdio: 'inherit' });
+        log('husky install completed.');
+      }
+    } else {
+      log('husky package.json not found – skipping.');
+    }
+  } catch (e) {
+    log(`version detection failed – skipping install (${e.message}).`);
+  }
 } catch (err) {
   log(`non-fatal error: ${err.message}`);
   // Never fail the whole install for Husky setup issues.
