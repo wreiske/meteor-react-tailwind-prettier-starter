@@ -13,6 +13,8 @@ dist
 /.vscode/*
 !.vscode/extensions.json
 
+# Build output directory
+build/
 
 # Meteor Modern-Tools build context directories
 _build

@@ -177,7 +177,7 @@ Tooltip component: pure Tailwind utilities (no external lib, no global tooltip s
 
 ## Production Notes
 
-- Build: `meteor build ../build --directory`
+- Build: `meteor build ./build --directory`
 - Provide env vars: `ROOT_URL`, `PORT`, `MONGO_URL`, `MAIL_URL`
 - Add a reverse proxy (Nginx/Caddy) for TLS & compression
 - Consider adding a tiny theme-preload script to avoid dark/light flash (optional)
