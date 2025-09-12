@@ -27,10 +27,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
-    "@meteorjs/rspack": "^0.0.43",
+    "@meteorjs/rspack": "^0.0.46",
     "@rsdoctor/rspack-plugin": "^1.2.3",
-    "@rspack/cli": "^1.5.0",
-    "@rspack/core": "^1.5.0",
+    "@rspack/cli": "^1.5.3",
+    "@rspack/core": "^1.5.3",
     "@rspack/plugin-react-refresh": "^1.4.3",
     "@tailwindcss/oxide": "4.1.13",
     "@tailwindcss/postcss": "^4.1.13",
@@ -49,14 +49,14 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^16.3.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
     "postcss": "^8.5.6",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.5.14",
     "react-refresh": "^0.17.0",
     "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10"
+    "typescript": "^5.9.2"
   },
   "meteor": {
     "mainModule": {
