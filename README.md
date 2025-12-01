@@ -20,7 +20,7 @@ Includes passwordless (magic link) auth + a realtime Todo example.
 ![Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4?logo=prettier&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![Node](https://img.shields.io/badge/Node-22.x-339933?logo=node.js&logoColor=white)
-![Meteor](https://img.shields.io/badge/Meteor-3.4.beta.11-DE4F4F?logo=meteor&logoColor=white)
+![Meteor](https://img.shields.io/badge/Meteor-3.4--rc.1-DE4F4F?logo=meteor&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.x-38B2AC?logo=tailwind-css&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
