@@ -10,10 +10,13 @@ import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import { TODO_TEXT_MAX } from '../../lib/constants';
+import { useMethod } from '../../lib/useMethod';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import Tooltip from '../../ui/Tooltip';
-import { type TodoDoc, Todos } from './api';
+import { Todos } from './api';
+import { type TodoDoc } from './schema';
 import { TodoItem } from './TodoItem';
 
 export const TodosApp: React.FC = () => {
@@ -37,6 +40,12 @@ export const TodosApp: React.FC = () => {
   const [dragIds, setDragIds] = useState<string[] | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
+  const insertTodo = useMethod<[string], string>('todos.insert');
+  const toggleTodo = useMethod<[string]>('todos.toggle');
+  const removeTodo = useMethod<[string]>('todos.remove');
+  const clearCompletedMethod = useMethod('todos.clearCompleted');
+  const reorderMethod = useMethod<[string[]]>('todos.reorder');
+
   const todos = useMemo(() => {
     if (filter !== 'all') return allTodos;
     return dragIds
@@ -57,14 +66,11 @@ export const TodosApp: React.FC = () => {
   const addTodo = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTodo.trim()) return;
-    Meteor.call('todos.insert', newTodo, (err: unknown) => {
-      if (!err) setNewTodo('');
-      else console.error(err);
-    });
+    insertTodo.call(newTodo).then(() => setNewTodo(''));
   };
-  const toggleTodo = (id: string) => Meteor.call('todos.toggle', id);
-  const removeTodo = (id: string) => Meteor.call('todos.remove', id);
-  const clearCompleted = () => Meteor.call('todos.clearCompleted');
+  const handleToggle = (id: string) => toggleTodo.call(id);
+  const handleRemove = (id: string) => removeTodo.call(id);
+  const clearCompleted = () => clearCompletedMethod.call();
 
   const beginDrag = (id: string) => {
     if (filter !== 'all') return;
@@ -93,7 +99,7 @@ export const TodosApp: React.FC = () => {
     const finalOrder = dragIds;
     setDragIds(null);
     setDraggingId(null);
-    if (!cancel) Meteor.call('todos.reorder', finalOrder);
+    if (!cancel) reorderMethod.call(finalOrder);
   };
 
   const touchDragOver = (clientY: number, clientX: number) => {
@@ -114,7 +120,7 @@ export const TodosApp: React.FC = () => {
             onChange={(e) => setNewTodo(e.target.value)}
             placeholder="Add a new todo"
             className="flex-1 dark:bg-neutral-800"
-            maxLength={200}
+            maxLength={TODO_TEXT_MAX}
           />
           <Tooltip content="Add todo" placement="top">
             <Button
@@ -178,8 +184,8 @@ export const TodosApp: React.FC = () => {
               <TodoItem
                 key={t._id}
                 todo={t}
-                onToggle={toggleTodo}
-                onRemove={removeTodo}
+                onToggle={handleToggle}
+                onRemove={handleRemove}
                 isDragging={draggingId === t._id}
                 draggableProps={{
                   draggable: true,

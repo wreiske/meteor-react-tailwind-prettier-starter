@@ -50,7 +50,7 @@ export default [
       react: { version: 'detect' },
       'import/resolver': {
         typescript: {
-          project: [path.resolve('./apps/web/tsconfig.json')],
+          project: [path.resolve('./tsconfig.json')],
         },
       },
     },

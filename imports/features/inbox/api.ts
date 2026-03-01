@@ -51,8 +51,9 @@ if (Meteor.isServer) {
     DDPRateLimiter.addRule({ name: (n) => n === 'inbox.clear', userId: () => true }, 5, 60_000);
   });
 
-  // Publication — no auth required (inbox is accessible without login)
+  // Publication — dev-mode only, no auth required (inbox is for local development)
   Meteor.publish('inbox.messages', function (email: unknown) {
+    if (process.env.MAIL_URL) return this.ready();
     check(email, String);
     const normalized = (email as string).trim().toLowerCase();
     if (!normalized) return this.ready();
@@ -61,6 +62,7 @@ if (Meteor.isServer) {
 
   Meteor.methods({
     async 'inbox.clear'(email: unknown) {
+      if (process.env.MAIL_URL) throw new Meteor.Error('not-available', 'Inbox is dev-only');
       check(email, String);
       const normalized = (email as string).trim().toLowerCase();
       await DevMails.removeAsync({ to: normalized });

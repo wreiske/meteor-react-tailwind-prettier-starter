@@ -10,14 +10,10 @@ import { DDPRateLimiter } from 'meteor/ddp-rate-limiter';
 import { Meteor } from 'meteor/meteor';
 import { Mongo } from 'meteor/mongo';
 
-export interface TodoDoc {
-  _id?: string;
-  userId: string;
-  text: string;
-  done: boolean;
-  createdAt: Date;
-  order?: number; // lower index = first
-}
+import { type TodoDoc, todoIdSchema, todoTextSchema } from './schema';
+
+export type { TodoDoc } from './schema';
+export type { TodoFilter } from './schema';
 
 export const Todos = new Mongo.Collection<TodoDoc>('todos');
 
@@ -57,11 +53,11 @@ if (Meteor.isServer) {
 
   Meteor.methods({
     async 'todos.insert'(text: string) {
-      check(text, String);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      const clean = text.trim();
-      if (!clean) throw new Meteor.Error('empty', 'Todo text required');
-      if (clean.length > 200) throw new Meteor.Error('too-long', 'Keep it under 200 chars');
+      const result = todoTextSchema.safeParse(text);
+      if (!result.success)
+        throw new Meteor.Error('validation', result.error.issues[0]?.message ?? 'Invalid input');
+      const clean = result.data;
       const last = await Todos.findOneAsync(
         { userId: this.userId },
         { sort: { order: -1 }, fields: { order: 1 } },
@@ -76,16 +72,16 @@ if (Meteor.isServer) {
       });
     },
     async 'todos.toggle'(todoId: string) {
-      check(todoId, String);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      const doc = await Todos.findOneAsync({ _id: todoId, userId: this.userId });
+      const id = todoIdSchema.parse(todoId);
+      const doc = await Todos.findOneAsync({ _id: id, userId: this.userId });
       if (!doc) throw new Meteor.Error('not-found');
-      await Todos.updateAsync(todoId, { $set: { done: !doc.done } });
+      await Todos.updateAsync(id, { $set: { done: !doc.done } });
     },
     async 'todos.remove'(todoId: string) {
-      check(todoId, String);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      await Todos.removeAsync({ _id: todoId, userId: this.userId });
+      const id = todoIdSchema.parse(todoId);
+      await Todos.removeAsync({ _id: id, userId: this.userId });
     },
     async 'todos.clearCompleted'() {
       if (!this.userId) throw new Meteor.Error('not-authorized');

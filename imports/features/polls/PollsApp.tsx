@@ -18,9 +18,12 @@ import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import React, { useState } from 'react';
 
+import { POLL_OPTION_MAX, POLL_OPTIONS_MAX, POLL_QUESTION_MAX } from '../../lib/constants';
+import { useMethod } from '../../lib/useMethod';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
-import { type PollDoc, Polls, type VoteDoc, Votes } from './api';
+import { Polls, Votes } from './api';
+import { type PollDoc, type VoteDoc } from './schema';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -42,8 +45,7 @@ interface CreateFormProps {
 const CreatePollForm: React.FC<CreateFormProps> = ({ onClose }) => {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const createPoll = useMethod<[string, string[]]>('polls.create');
 
   const setOption = (i: number, val: string) =>
     setOptions((prev) => prev.map((o, idx) => (idx === i ? val : o)));
@@ -59,16 +61,12 @@ const CreatePollForm: React.FC<CreateFormProps> = ({ onClose }) => {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     const filled = options.filter((o) => o.trim());
-    if (!question.trim()) return setError('Question is required.');
-    if (filled.length < 2) return setError('At least 2 non-empty options required.');
-    setSubmitting(true);
-    Meteor.call('polls.create', question, filled, (err: Meteor.Error | null) => {
-      setSubmitting(false);
-      if (err) setError(err.reason ?? 'Error creating poll');
-      else onClose();
-    });
+    if (!question.trim() || filled.length < 2) return;
+    createPoll
+      .call(question, filled)
+      .then(() => onClose())
+      .catch(() => {}); // error shown via createPoll.error
   };
 
   return (
@@ -94,7 +92,7 @@ const CreatePollForm: React.FC<CreateFormProps> = ({ onClose }) => {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="What should we build next?"
-            maxLength={300}
+            maxLength={POLL_QUESTION_MAX}
             className="w-full dark:bg-neutral-700"
             autoFocus
           />
@@ -110,7 +108,7 @@ const CreatePollForm: React.FC<CreateFormProps> = ({ onClose }) => {
                 value={opt}
                 onChange={(e) => setOption(i, e.target.value)}
                 placeholder={`Option ${i + 1}`}
-                maxLength={100}
+                maxLength={POLL_OPTION_MAX}
                 className="flex-1 dark:bg-neutral-700"
               />
               {options.length > 2 && (
@@ -125,7 +123,7 @@ const CreatePollForm: React.FC<CreateFormProps> = ({ onClose }) => {
               )}
             </div>
           ))}
-          {options.length < 8 && (
+          {options.length < POLL_OPTIONS_MAX && (
             <button
               type="button"
               onClick={addOption}
@@ -137,14 +135,14 @@ const CreatePollForm: React.FC<CreateFormProps> = ({ onClose }) => {
           )}
         </div>
 
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {createPoll.error && <p className="text-xs text-red-500">{createPoll.error}</p>}
 
         <Button
           type="submit"
-          disabled={submitting}
+          disabled={createPoll.loading}
           className="w-full bg-blue-600 py-2 text-sm text-white hover:bg-blue-500 disabled:opacity-40"
         >
-          {submitting ? 'Creating…' : 'Create Poll'}
+          {createPoll.loading ? 'Creating…' : 'Create Poll'}
         </Button>
       </form>
     </div>
@@ -165,22 +163,17 @@ const PollCard: React.FC<PollCardProps> = ({ poll, votes, currentUserId }) => {
   const myVote = votes.find((v) => v.pollId === poll._id && v.userId === currentUserId);
   const isOwner = poll.userId === currentUserId;
 
+  const voteMethod = useMethod<[string, string]>('polls.vote');
+  const closeMethod = useMethod<[string]>('polls.close');
+  const removeMethod = useMethod<[string]>('polls.remove');
+
   const vote = (optionId: string) => {
     if (!poll.isOpen) return;
-    Meteor.call('polls.vote', poll._id, optionId, (err: unknown) => {
-      if (err) console.error(err);
-    });
+    voteMethod.call(poll._id!, optionId);
   };
 
-  const close = () =>
-    Meteor.call('polls.close', poll._id, (err: unknown) => {
-      if (err) console.error(err);
-    });
-
-  const remove = () =>
-    Meteor.call('polls.remove', poll._id, (err: unknown) => {
-      if (err) console.error(err);
-    });
+  const close = () => closeMethod.call(poll._id!);
+  const remove = () => removeMethod.call(poll._id!);
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">

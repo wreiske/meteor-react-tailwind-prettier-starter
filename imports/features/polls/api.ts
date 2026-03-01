@@ -7,34 +7,21 @@
  * To disable: remove this import from server/main.ts and remove the route
  * entry from AppLayout.tsx.
  */
-import { check } from 'meteor/check';
 import { DDPRateLimiter } from 'meteor/ddp-rate-limiter';
 import { Meteor } from 'meteor/meteor';
 import { Mongo } from 'meteor/mongo';
 
-// ─── Data model ──────────────────────────────────────────────────────────────
+import {
+  optionIdSchema,
+  type PollDoc,
+  pollIdSchema,
+  type PollOption,
+  pollOptionTextsSchema,
+  pollQuestionSchema,
+  type VoteDoc,
+} from './schema';
 
-export interface PollOption {
-  id: string;
-  text: string;
-}
-
-export interface PollDoc {
-  _id?: string;
-  userId: string;
-  question: string;
-  options: PollOption[];
-  createdAt: Date;
-  isOpen: boolean;
-}
-
-export interface VoteDoc {
-  _id?: string;
-  pollId: string;
-  userId: string;
-  optionId: string;
-  createdAt: Date;
-}
+export type { PollDoc, PollOption, VoteDoc } from './schema';
 
 export const Polls = new Mongo.Collection<PollDoc>('polls');
 export const Votes = new Mongo.Collection<VoteDoc>('votes');
@@ -74,20 +61,18 @@ if (Meteor.isServer) {
 
   Meteor.methods({
     async 'polls.create'(question: string, optionTexts: string[]) {
-      check(question, String);
-      check(optionTexts, [String]);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      const q = question.trim();
-      if (!q) throw new Meteor.Error('empty', 'Question required');
-      if (q.length > 300) throw new Meteor.Error('too-long', 'Question too long (max 300)');
-      if (optionTexts.length < 2 || optionTexts.length > 8)
-        throw new Meteor.Error('invalid-options', '2–8 options required');
-      const options: PollOption[] = optionTexts.map((text, i) => ({
+      const qResult = pollQuestionSchema.safeParse(question);
+      if (!qResult.success)
+        throw new Meteor.Error('validation', qResult.error.issues[0]?.message ?? 'Invalid input');
+      const oResult = pollOptionTextsSchema.safeParse(optionTexts);
+      if (!oResult.success)
+        throw new Meteor.Error('validation', oResult.error.issues[0]?.message ?? 'Invalid input');
+      const q = qResult.data;
+      const options: PollOption[] = oResult.data.map((text, i) => ({
         id: `opt_${i}`,
-        text: text.trim(),
+        text,
       }));
-      if (options.some((o) => !o.text))
-        throw new Meteor.Error('empty-option', 'All options must have text');
       return Polls.insertAsync({
         userId: this.userId,
         question: q,
@@ -98,36 +83,36 @@ if (Meteor.isServer) {
     },
 
     async 'polls.vote'(pollId: string, optionId: string) {
-      check(pollId, String);
-      check(optionId, String);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      const poll = await Polls.findOneAsync(pollId);
+      const pid = pollIdSchema.parse(pollId);
+      const oid = optionIdSchema.parse(optionId);
+      const poll = await Polls.findOneAsync(pid);
       if (!poll) throw new Meteor.Error('not-found', 'Poll not found');
       if (!poll.isOpen) throw new Meteor.Error('closed', 'This poll is closed');
-      if (!poll.options.some((o) => o.id === optionId))
+      if (!poll.options.some((o) => o.id === oid))
         throw new Meteor.Error('invalid-option', 'Invalid option');
       // Upsert so the user can change their vote
       await Votes.upsertAsync(
-        { pollId, userId: this.userId },
-        { $set: { optionId, createdAt: new Date() } },
+        { pollId: pid, userId: this.userId },
+        { $set: { optionId: oid, createdAt: new Date() } },
       );
     },
 
     async 'polls.close'(pollId: string) {
-      check(pollId, String);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      const poll = await Polls.findOneAsync({ _id: pollId, userId: this.userId });
+      const pid = pollIdSchema.parse(pollId);
+      const poll = await Polls.findOneAsync({ _id: pid, userId: this.userId });
       if (!poll) throw new Meteor.Error('not-found', 'Poll not found or not yours');
-      await Polls.updateAsync(pollId, { $set: { isOpen: false } });
+      await Polls.updateAsync(pid, { $set: { isOpen: false } });
     },
 
     async 'polls.remove'(pollId: string) {
-      check(pollId, String);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      const poll = await Polls.findOneAsync({ _id: pollId, userId: this.userId });
+      const pid = pollIdSchema.parse(pollId);
+      const poll = await Polls.findOneAsync({ _id: pid, userId: this.userId });
       if (!poll) throw new Meteor.Error('not-found', 'Poll not found or not yours');
-      await Polls.removeAsync(pollId);
-      await Votes.removeAsync({ pollId });
+      await Polls.removeAsync(pid);
+      await Votes.removeAsync({ pollId: pid });
     },
   });
 }

@@ -60,6 +60,13 @@ function linkifyText(text: string): string {
   return result;
 }
 
+/** Strip dangerous HTML: remove <script>, <iframe>, <object>, <embed>, <style> tags and on* event attrs. */
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<\s*\/?\s*(script|iframe|object|embed|style)\b[^>]*>/gi, '')
+    .replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, '');
+}
+
 // ─── MailCard ─────────────────────────────────────────────────────────────────
 
 const MailCard: React.FC<{ mail: DevMailDoc }> = ({ mail }) => {
@@ -100,7 +107,7 @@ const MailCard: React.FC<{ mail: DevMailDoc }> = ({ mail }) => {
           ) : mail.html ? (
             <div
               className="max-w-none text-sm text-neutral-700 dark:text-neutral-300 [&_a]:text-blue-600 [&_a]:underline dark:[&_a]:text-blue-400"
-              dangerouslySetInnerHTML={{ __html: mail.html }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(mail.html) }}
             />
           ) : (
             <p className="text-sm italic text-neutral-400">(empty body)</p>

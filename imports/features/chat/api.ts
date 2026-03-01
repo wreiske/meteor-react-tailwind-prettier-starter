@@ -12,23 +12,16 @@ import { DDPRateLimiter } from 'meteor/ddp-rate-limiter';
 import { Meteor } from 'meteor/meteor';
 import { Mongo } from 'meteor/mongo';
 
-// ─── Data model ──────────────────────────────────────────────────────────────
+import {
+  type ChatMessageDoc,
+  chatMessageTextSchema,
+  type ChatRoomDoc,
+  chatRoomNameSchema,
+  messageLimitSchema,
+  roomIdSchema,
+} from './schema';
 
-export interface ChatRoomDoc {
-  _id?: string;
-  name: string;
-  createdAt: Date;
-  createdBy: string; // userId or 'system'
-}
-
-export interface ChatMessageDoc {
-  _id?: string;
-  roomId: string;
-  userId: string;
-  username: string; // denormalized email prefix for fast display
-  text: string;
-  createdAt: Date;
-}
+export type { ChatMessageDoc, ChatRoomDoc } from './schema';
 
 export const ChatRooms = new Mongo.Collection<ChatRoomDoc>('chatRooms');
 export const ChatMessages = new Mongo.Collection<ChatMessageDoc>('chatMessages');
@@ -69,25 +62,25 @@ if (Meteor.isServer) {
   Meteor.publish('chat.messages', function (roomId: string, limit = 50) {
     if (!this.userId) return this.ready();
     check(roomId, String);
-    const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
+    const safeLimit = messageLimitSchema.parse(limit);
     return ChatMessages.find({ roomId }, { sort: { createdAt: -1 }, limit: safeLimit });
   });
 
   Meteor.methods({
     async 'chat.sendMessage'(roomId: string, text: string) {
-      check(roomId, String);
-      check(text, String);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      const clean = text.trim();
-      if (!clean) throw new Meteor.Error('empty', 'Message cannot be empty');
-      if (clean.length > 2000) throw new Meteor.Error('too-long', 'Keep it under 2000 chars');
-      const room = await ChatRooms.findOneAsync(roomId);
+      const rid = roomIdSchema.parse(roomId);
+      const result = chatMessageTextSchema.safeParse(text);
+      if (!result.success)
+        throw new Meteor.Error('validation', result.error.issues[0]?.message ?? 'Invalid input');
+      const clean = result.data;
+      const room = await ChatRooms.findOneAsync(rid);
       if (!room) throw new Meteor.Error('not-found', 'Room not found');
       const user = await Meteor.users.findOneAsync(this.userId);
       const email = user?.emails?.[0]?.address ?? '';
       const username = email.split('@')[0] || 'user';
       return ChatMessages.insertAsync({
-        roomId,
+        roomId: rid,
         userId: this.userId,
         username,
         text: clean,
@@ -96,13 +89,11 @@ if (Meteor.isServer) {
     },
 
     async 'chat.createRoom'(name: string) {
-      check(name, String);
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      const clean = name.trim().toLowerCase().replace(/\s+/g, '-');
-      if (!clean) throw new Meteor.Error('empty', 'Room name required');
-      if (clean.length > 50) throw new Meteor.Error('too-long', 'Keep it under 50 chars');
-      if (!/^[a-z0-9-]+$/.test(clean))
-        throw new Meteor.Error('invalid-name', 'Only letters, numbers, and hyphens allowed');
+      const result = chatRoomNameSchema.safeParse(name);
+      if (!result.success)
+        throw new Meteor.Error('validation', result.error.issues[0]?.message ?? 'Invalid input');
+      const clean = result.data;
       const existing = await ChatRooms.findOneAsync({ name: clean });
       if (existing) throw new Meteor.Error('conflict', `Room "${clean}" already exists`);
       return ChatRooms.insertAsync({ name: clean, createdAt: new Date(), createdBy: this.userId });

@@ -15,10 +15,6 @@ Includes **real-time Chat**, **Live Polls**, **Reactive Todos**, and **User Prof
 | TailwindCSS | 4.x                  | Oxide (Lightning CSS) engine         |
 | TypeScript  | 5.x                  | Strict mode                          |
 
-Includes passwordless (magic link) auth + real-time examples: **Chat**, **Polls**, **Todos**, and **User Profiles**.
-
-<br />
-
 ![Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4?logo=prettier&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![Node](https://img.shields.io/badge/Node-22.x-339933?logo=node.js&logoColor=white)
@@ -33,18 +29,15 @@ Includes passwordless (magic link) auth + real-time examples: **Chat**, **Polls*
 
 ## Highlights
 
-Core features kept intentionally lean:
-
-- React 19 + TypeScript hot reload development loop
-- Tailwind CSS 4 with a _near-zero_ custom CSS footprint (only minimal globals)
-- Accessible dark/light Theme Toggle (persists via localStorage, prevents FOUC)
-- Passwordless email login (magic link + optional one-time code entry)
-- Realtime Todo list demonstrating Meteor publications + methods + latency compensation
-- Reusable UI primitives (`Button`, `Card`, `Input`, `Tooltip`, `ThemeToggle`, etc.)
-- Headless, utility-first Tooltip component (pure Tailwind – no extra global CSS)
-- Strict linting + formatting (ESLint, Prettier, simple-import-sort)
-- Production touches: (example) rate limiting + Mongo index hooks (extend as needed)
-- Dark mode class + data attribute for flexible theming
+- **Passwordless auth** — magic link email login (logs to console in dev)
+- **4 real-time features** — Todos, Chat, Polls, User Profiles — all using Meteor DDP
+- **Shared validation** — [Zod](https://zod.dev) schemas shared between server methods and client forms
+- **Typed data hooks** — `useMethod` wrapper eliminates raw `Meteor.call` from components
+- **Dark / light theme** — persisted via `localStorage`, flash-free with SSR inline script
+- **SSR + hydration** — landing page rendered server-side, hydrated on client
+- **Security defaults** — rate limiting, Mongo indexes, scoped publications, input validation
+- **Strict tooling** — ESLint, Prettier, simple-import-sort, TypeScript strict mode
+- **Testing** — Vitest with schema validation tests; CI runs lint + typecheck + tests + build
 
 ## Screenshots
 
@@ -56,159 +49,163 @@ Core features kept intentionally lean:
 
 <br />
 
-Additional views:
-
 <img src="./screenshots/todo-sample (3).png" alt="Todos populated (variant 1)" width="300" />
 <img src="./screenshots/todo-sample (4).png" alt="Todos populated (variant 2)" width="300" />
 
 </div>
 
+## Quick Start
+
+```bash
+# Install Meteor (if not already installed)
+curl https://install.meteor.com/ | sh
+
+# Clone and run
+git clone https://github.com/wreiske/meteor-react-tailwind-prettier-starter
+cd meteor-react-tailwind-prettier-starter
+npm ci --no-audit --no-fund
+meteor run
+```
+
+Open http://localhost:3000. Magic link tokens are logged to the server console in development.
+
 ## Project Structure
 
 ```
-apps/meteor-react-tailwind-prettier-starter/
-  client/
-    main.tsx              # React entry
-    main.html             # Meteor HTML shell
-    styles.css            # Tailwind source + tiny global rules
-  imports/
-    api/
-      todos.ts            # Methods + publication
-    lib/                  # (Placeholder for shared helpers)
-    schemas/              # (Placeholder for future collection schemas)
-    server/
-      startup/
-        client.ts         # Client startup hooks
-        server.ts         # Server startup (accounts, indexes, rate limiting)
-    ui/
-      LoginForm.tsx
-      TodosApp.tsx
+client/
+  main.tsx                  # React root — createRoot / hydrateRoot
+  main.html                 # HTML shell with <div id="root">
+  styles.css                # Tailwind imports + minimal global styles
+imports/
+  features/                 # Feature modules — self-contained API + UI
+    todos/
+      api.ts                # Collection, methods, publication, rate limiting
+      schema.ts             # Zod schemas + TypeScript types (isomorphic)
+      schema.test.ts        # Vitest tests for schema validation
+      TodosApp.tsx          # Feature UI
       TodoItem.tsx
-      Tooltip.tsx
-      ThemeToggle.tsx
-      Card.tsx
-      Button.tsx
-      Input.tsx
-      SmallMuted.tsx
-  server/
-    main.ts               # Meteor server entry (imports startup + api)
-  scripts/
-    prune-legacy.sh       # Example maintenance script
-  tailwind.config.cjs
-  postcss.config.cjs
-  eslint.config.mjs
-  tsconfig.json
-  package.json
-  README.md
+    chat/                   # Same pattern: api.ts, schema.ts, ChatApp.tsx
+    polls/                  # Same pattern: api.ts, schema.ts, PollsApp.tsx
+    profile/                # api.ts, schema.ts, ProfilePage.tsx, Avatar.tsx
+    inbox/                  # Dev email viewer (auto-disabled in production)
+  lib/
+    constants.ts            # Shared validation limits, storage keys, app URLs
+    useMethod.ts            # Typed Meteor.call wrapper hook
+    useTheme.ts             # Shared theme hook (read/apply/toggle)
+  startup/
+    client.ts               # Client startup (feature API imports)
+    server.ts               # Accounts config, dev email capture, user pub
+    ssr.tsx                  # SSR for landing page + SEO meta tags
+  ui/                       # Shared UI components
+    AppLayout.tsx            # Root shell — routing, sidebar, header
+    LandingPage.tsx          # Marketing page (SSR-safe, Motion animations)
+    LoginForm.tsx            # Passwordless auth form
+    Button.tsx, Input.tsx, Card.tsx, Tooltip.tsx  # Primitives
+    ThemeToggle.tsx, Sidebar.tsx, AppHeader.tsx   # Layout components
+server/
+  main.ts                   # Server entry — imports features + startup
 ```
 
-## Quick Start
+### How to Add a Feature
 
-Requirements: Git + Meteor (or use `npx meteor`) + Node 22 (bundled by Meteor 3).
+1. Create `imports/features/myfeature/`
+2. Add `schema.ts` — Zod schemas + TypeScript types
+3. Add `api.ts` — collection, methods, publication (import schemas)
+4. Add `MyFeatureApp.tsx` — UI component (import `useMethod` + constants)
+5. Add route in `imports/ui/AppLayout.tsx` → `ROUTES` map
+6. Add nav item in `imports/ui/Sidebar.tsx` → `NAV_SECTIONS`
+7. Import `api.ts` in `server/main.ts` and `imports/startup/client.ts`
+
+### Conventions
+
+- **Validation**: Define Zod schemas in `schema.ts`, use them in both server methods and client forms
+- **Constants**: Shared limits/keys live in `imports/lib/constants.ts`
+- **Methods**: Components use `useMethod('method.name')` — never call `Meteor.call` directly
+- **Theme**: Use `useTheme()` from `imports/lib/useTheme.ts` — never access `localStorage` directly for theme
+- **Types**: Export TypeScript interfaces from `schema.ts`, re-export from `api.ts`
+
+## Auth Flow
+
+1. User enters email → server sends magic link
+2. In development (no `MAIL_URL`), the email is captured in the **Dev Inbox** (`/inbox`)
+3. Click the link or paste the token manually
+4. User is authenticated — app redirects to `/app/todos`
 
 ```bash
-git clone https://github.com/wreiske/meteor-react-tailwind-prettier-starter
-cd meteor-react-tailwind-prettier-starter
-meteor npm install
-meteor run
+# Configure SMTP for production
+MAIL_URL="smtp://user:pass@smtp.example.com:587" meteor run
 ```
 
-Open http://localhost:3000
+## Commands
 
-## Auth Flow (Passwordless)
+```bash
+# Development
+meteor run                    # Start dev server (2-5 min first startup)
+npm run lint                  # Check code style
+npm run typecheck             # Check TypeScript
+npm run format                # Check Prettier formatting
+npm test                      # Run Vitest tests
+npm run test:watch            # Run tests in watch mode
 
-1. User enters email and submits.
-2. A magic link email is generated (shown in server logs if no SMTP configured).
-3. Clicking the link logs the user in; OR the one-time token from the URL can be pasted manually.
+# Fixes
+npm run lint:fix              # Auto-fix lint issues
+npm run format:fix            # Auto-format code
 
-Configure SMTP for real delivery (development fallback logs the link):
-
-```powershell
-$env:MAIL_URL = "smtp://user:pass@smtp.example.com:587"
-meteor run
+# Production
+meteor build ../build --directory   # Build (5-15 min)
 ```
 
-## Todo API Reference
+## Feature API Reference
 
-Methods (latency-compensated):
+### Todos
 
-| Method                 | Action                     |
-| ---------------------- | -------------------------- |
-| `todos.insert(text)`   | Create a todo              |
-| `todos.toggle(id)`     | Toggle completion          |
-| `todos.remove(id)`     | Remove one                 |
-| `todos.clearCompleted` | Remove all completed items |
+| Method                 | Args            | Description          |
+| ---------------------- | --------------- | -------------------- |
+| `todos.insert`         | `text: string`  | Create a todo        |
+| `todos.toggle`         | `id: string`    | Toggle completion    |
+| `todos.remove`         | `id: string`    | Delete one           |
+| `todos.clearCompleted` | —               | Delete all completed |
+| `todos.reorder`        | `ids: string[]` | Reorder by position  |
 
-Publication:
+### Chat
 
-| Publication  | Returns                              |
-| ------------ | ------------------------------------ |
-| `todos.list` | All todos for the authenticated user |
+| Method             | Args                   | Description        |
+| ------------------ | ---------------------- | ------------------ |
+| `chat.createRoom`  | `name: string`         | Create a chat room |
+| `chat.sendMessage` | `roomId, text: string` | Send a message     |
 
-Collection shape (reference):
+### Polls
 
-```ts
-interface TodoDoc {
-  _id: string;
-  text: string;
-  done: boolean;
-  userId: string;
-  createdAt: Date;
-}
-```
-
-### Extending
-
-- Add query params (filter: active/done) via a refined publication.
-- Add optimistic UI batching or offline queue.
-- Add rate limiting (package already available; extend as needed).
-- Introduce input validation (e.g. `zod`) for safer method contracts.
+| Method         | Args                          | Description   |
+| -------------- | ----------------------------- | ------------- |
+| `polls.create` | `question, options: string[]` | Create a poll |
+| `polls.vote`   | `pollId, optionId: string`    | Cast a vote   |
+| `polls.close`  | `pollId: string`              | Close voting  |
+| `polls.remove` | `pollId: string`              | Delete a poll |
 
 ## Styling & Theming
 
-Tailwind 4 with Oxide (Lightning CSS). Minimal custom CSS lives in `client/styles.css` (font smoothing + base resets). All components rely on utilities. Dark mode is toggled by a stored preference applying both the `dark` class and a `data-theme` attribute for future design token expansions.
+- **Tailwind CSS 4** with Oxide (Lightning CSS) engine
+- Minimal custom CSS in `client/styles.css` (font smoothing + resets)
+- Dark mode via `data-theme` attribute + `dark` class
+- Theme persisted in `localStorage` using shared `THEME_KEY` constant
+- SSR inline script prevents flash of wrong theme
 
-Tooltip component: pure Tailwind utilities (no external lib, no global tooltip stylesheet). Respects reduced-motion preferences.
+## Production
 
-## Tooling
+```bash
+meteor build ../build --directory
+cd ../build/bundle
+npm install --production
+PORT=3000 MONGO_URL="mongodb://..." ROOT_URL="https://..." MAIL_URL="smtp://..." node main.js
+```
 
-- Prettier enforced (including Tailwind class sorting if configured)
-- ESLint flat config (`eslint.config.mjs`)
-- TypeScript strict mode
-- Simple directory aliases can be added via `tsconfig.json` if desired
-
-## Production Notes
-
-- Build: `meteor build ./build --directory`
-- Provide env vars: `ROOT_URL`, `PORT`, `MONGO_URL`, `MAIL_URL`
-- Add a reverse proxy (Nginx/Caddy) for TLS & compression
-- Consider adding a tiny theme-preload script to avoid dark/light flash (optional)
-
-### Hardening Ideas
-
-- Add DDPRateLimiter rules for auth + todos
-- Create MongoDB indexes (e.g. on `userId, createdAt` for todos)
-- Add schema validation layer (collection2, zod, or check)
-- Implement content security policy headers
-
-## Customization Roadmap (Pick & Choose)
-
-| Goal            | Direction                                        |
-| --------------- | ------------------------------------------------ |
-| SSR / streaming | Integrate Meteor SSR + React 19 streaming APIs   |
-| Testing         | Add `meteortesting:mocha` or Jest for pure logic |
-| Design System   | Replace primitives w/ your component library     |
-| Auth Variants   | Add OAuth, passwords, SMS codes                  |
-| Performance     | Add code splitting / dynamic imports             |
+Add a reverse proxy (Nginx / Caddy) for TLS and compression.
 
 ## Contributing
 
-PRs welcome. Keep scope tight (clarity > features). The aim is a _teachable_ baseline, not an everything kitchen sink starter.
+PRs welcome. Keep scope tight — this is a _teachable_ baseline, not a kitchen sink.
 
 ## License
 
-MIT – see `LICENSE`.
-
-## Acknowledgements
-
-Thanks to the Meteor, React, and Tailwind communities for excellent tooling.
+MIT — see `LICENSE`.

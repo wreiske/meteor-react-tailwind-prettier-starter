@@ -22,6 +22,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { AnimatePresence, motion } from 'motion/react';
 import React from 'react';
 
+import { REPO_URL } from '../lib/constants';
 import { useSidebar } from './AppLayout';
 import { useRouter } from './router';
 
@@ -53,8 +54,6 @@ const NAV: NavSection[] = [
   },
 ];
 
-const GITHUB_URL = 'https://github.com/wreiske/meteor-react-tailwind-prettier-starter';
-
 // ─── NavLink ─────────────────────────────────────────────────────────────────
 
 const NavLink: React.FC<{ item: NavItem; active: boolean; expanded: boolean }> = ({
@@ -68,8 +67,9 @@ const NavLink: React.FC<{ item: NavItem; active: boolean; expanded: boolean }> =
       type="button"
       onClick={() => navigate(item.href)}
       className={[
-        'group flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-sm transition-colors',
+        'group flex h-9 w-full items-center rounded-lg text-sm transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-blue-500/40',
+        expanded ? 'gap-3 px-2.5' : 'justify-center px-0',
         active
           ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'
           : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800',
@@ -180,11 +180,14 @@ const SidebarContent: React.FC = () => {
       <div className="shrink-0 space-y-0.5 border-t border-neutral-200 px-2 py-3 dark:border-neutral-800">
         {/* GitHub link */}
         <a
-          href={GITHUB_URL}
+          href={REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
           title={!isExpanded ? 'View on GitHub' : undefined}
-          className="flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+          className={[
+            'flex h-9 items-center rounded-lg text-sm text-neutral-500 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800',
+            isExpanded ? 'gap-3 px-2.5' : 'w-full justify-center px-0',
+          ].join(' ')}
         >
           <FontAwesomeIcon icon={faGithub} className="w-4 shrink-0 text-sm" />
           <AnimatePresence initial={false}>
@@ -209,7 +212,10 @@ const SidebarContent: React.FC = () => {
           onClick={toggle}
           title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
           aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-          className="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+          className={[
+            'flex h-9 w-full items-center rounded-lg text-sm text-neutral-500 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800',
+            isExpanded ? 'gap-3 px-2.5' : 'justify-center px-0',
+          ].join(' ')}
         >
           <FontAwesomeIcon
             icon={isExpanded ? faChevronLeft : faChevronRight}

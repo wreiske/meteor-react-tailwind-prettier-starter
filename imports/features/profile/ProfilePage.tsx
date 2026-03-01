@@ -13,8 +13,15 @@ import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import React, { useState } from 'react';
 
+import {
+  PROFILE_BIO_MAX,
+  PROFILE_DISPLAY_NAME_MAX,
+  PROFILE_WEBSITE_MAX,
+} from '../../lib/constants';
+import { useMethod } from '../../lib/useMethod';
 import { UserProfiles } from './api';
 import { Avatar } from './Avatar';
+import { type ProfileUpdateInput } from './schema';
 
 interface ProfilePageProps {
   userId: string;
@@ -42,29 +49,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
+  const updateProfile = useMethod<[ProfileUpdateInput]>('profile.update');
 
   const startEdit = () => {
     setDisplayName(profile?.displayName ?? '');
     setBio(profile?.bio ?? '');
     setWebsite(profile?.website ?? '');
-    setError('');
+    updateProfile.clearError();
     setEditing(true);
   };
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setError('');
-    Meteor.call('profile.update', { displayName, bio, website }, (err: Meteor.Error | null) => {
-      setSaving(false);
-      if (err) {
-        setError(err.reason ?? 'Error saving profile');
-      } else {
-        setEditing(false);
-      }
-    });
+    updateProfile
+      .call({ displayName, bio, website })
+      .then(() => setEditing(false))
+      .catch(() => {}); // error shown via updateProfile.error
   };
 
   if (!isReady) {
@@ -145,7 +145,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             <input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              maxLength={50}
+              maxLength={PROFILE_DISPLAY_NAME_MAX}
               placeholder="Your name"
               className="w-full rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-neutral-700 dark:text-neutral-100"
             />
@@ -158,7 +158,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              maxLength={300}
+              maxLength={PROFILE_BIO_MAX}
               rows={3}
               placeholder="A short bio…"
               className="w-full resize-none rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-neutral-700 dark:text-neutral-100"
@@ -172,14 +172,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             <input
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
-              maxLength={200}
+              maxLength={PROFILE_WEBSITE_MAX}
               placeholder="https://yoursite.com"
               type="url"
               className="w-full rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-neutral-700 dark:text-neutral-100"
             />
           </div>
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {updateProfile.error && <p className="text-xs text-red-500">{updateProfile.error}</p>}
 
           <div className="flex justify-end gap-2 pt-1">
             <button
@@ -191,10 +191,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={updateProfile.loading}
               className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
             >
-              {saving ? 'Saving…' : 'Save'}
+              {updateProfile.loading ? 'Saving…' : 'Save'}
             </button>
           </div>
         </form>

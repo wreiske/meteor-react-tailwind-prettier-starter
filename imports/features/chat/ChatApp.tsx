@@ -11,9 +11,12 @@ import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import React, { useEffect, useRef, useState } from 'react';
 
+import { CHAT_MESSAGE_MAX, CHAT_ROOM_NAME_MAX } from '../../lib/constants';
+import { useMethod } from '../../lib/useMethod';
 import { Input } from '../../ui/Input';
 import { UsernameBadge } from '../profile/UsernameBadge';
-import { type ChatMessageDoc, ChatMessages, type ChatRoomDoc, ChatRooms } from './api';
+import { ChatMessages, ChatRooms } from './api';
+import { type ChatMessageDoc, type ChatRoomDoc } from './schema';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -87,21 +90,19 @@ interface RoomListProps {
 const RoomList: React.FC<RoomListProps> = ({ rooms, selectedId, onSelect }) => {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
-  const [error, setError] = useState('');
+  const createRoom = useMethod<[string], string>('chat.createRoom');
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    Meteor.call('chat.createRoom', newName, (err: Meteor.Error | null, id: string) => {
-      if (err) {
-        setError(err.reason ?? err.error?.toString() ?? 'Error');
-      } else {
+    createRoom
+      .call(newName)
+      .then((id) => {
         setNewName('');
         setCreating(false);
-        setError('');
         onSelect(id);
-      }
-    });
+      })
+      .catch(() => {}); // error is in createRoom.error
   };
 
   return (
@@ -114,7 +115,7 @@ const RoomList: React.FC<RoomListProps> = ({ rooms, selectedId, onSelect }) => {
           type="button"
           onClick={() => {
             setCreating((v) => !v);
-            setError('');
+            createRoom.clearError();
           }}
           className="flex h-6 w-6 items-center justify-center rounded text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
           title="New room"
@@ -132,9 +133,9 @@ const RoomList: React.FC<RoomListProps> = ({ rooms, selectedId, onSelect }) => {
             onChange={(e) => setNewName(e.target.value)}
             placeholder="room-name"
             className="h-7 text-xs"
-            maxLength={50}
+            maxLength={CHAT_ROOM_NAME_MAX}
           />
-          {error && <p className="mt-1 text-[10px] text-red-500">{error}</p>}
+          {createRoom.error && <p className="mt-1 text-[10px] text-red-500">{createRoom.error}</p>}
         </form>
       )}
 
@@ -255,14 +256,14 @@ interface MessageInputProps {
 
 const MessageInput: React.FC<MessageInputProps> = ({ roomId, roomName }) => {
   const [text, setText] = useState('');
+  const sendMessage = useMethod<[string, string]>('chat.sendMessage');
 
   const send = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
-    Meteor.call('chat.sendMessage', roomId, text, (err: unknown) => {
-      if (err) console.error(err);
-    });
+    const msg = text;
     setText('');
+    sendMessage.call(roomId, msg);
   };
 
   return (
@@ -275,7 +276,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ roomId, roomName }) => {
         onChange={(e) => setText(e.target.value)}
         placeholder={`Message #${roomName}`}
         className="flex-1 dark:bg-neutral-800"
-        maxLength={2000}
+        maxLength={CHAT_MESSAGE_MAX}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();

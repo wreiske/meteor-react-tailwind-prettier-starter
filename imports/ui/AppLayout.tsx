@@ -18,6 +18,7 @@ import { ChatApp } from '../features/chat/ChatApp';
 import { PollsApp } from '../features/polls/PollsApp';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { TodosApp } from '../features/todos/TodosApp';
+import { SIDEBAR_KEY } from '../lib/constants';
 import { AppHeader } from './AppHeader';
 import { RouterContext } from './router';
 import { SettingsPage } from './SettingsPage';
@@ -70,8 +71,6 @@ export const SidebarContext = createContext<SidebarCtx>({
 export const useSidebar = () => useContext(SidebarContext);
 
 // ─── AppLayout ────────────────────────────────────────────────────────────────
-
-const SIDEBAR_KEY = 'app:sidebar';
 
 export const AppLayout: React.FC = () => {
   // ── Routing ──

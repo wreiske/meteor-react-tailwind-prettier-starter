@@ -12,6 +12,7 @@ import { Accounts } from 'meteor/accounts-base';
 import { Meteor } from 'meteor/meteor';
 import React, { useState } from 'react';
 
+import { REPO_URL } from '../lib/constants';
 import { Button } from './Button';
 import { Input } from './Input';
 import { ThemeToggle } from './ThemeToggle';
@@ -173,7 +174,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ initialMode }) => {
         {/* Top bar — GitHub + theme toggle */}
         <div className="absolute right-4 top-4 flex items-center gap-2">
           <a
-            href="https://github.com/wreiske/meteor-react-tailwind-prettier-starter"
+            href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="View source on GitHub"

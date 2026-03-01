@@ -37,6 +37,8 @@ jobs:
         run: npm run lint
       - name: Type Check
         run: npm run typecheck
+      - name: Test
+        run: npm test
 
   build:
     name: Meteor Build (Linux)

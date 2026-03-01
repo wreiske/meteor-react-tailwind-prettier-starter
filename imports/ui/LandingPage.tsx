@@ -42,9 +42,10 @@ import {
 } from 'motion/react';
 import React, { useEffect, useRef, useState } from 'react';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+import { REPO_URL } from '../lib/constants';
+import { useTheme } from '../lib/useTheme';
 
-const REPO_URL = 'https://github.com/wreiske/meteor-react-tailwind-prettier-starter';
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const TECH_BADGES = [
   'Meteor 3.5',
@@ -192,8 +193,6 @@ const DEMOS: Demo[] = [
 const HERO_WORDS_1 = ['The', 'Modern', 'Full-Stack'];
 const HERO_HIGHLIGHT = ['React', 'Starter'];
 
-const THEME_KEY = 'app:theme' as const;
-
 // ─── Reduced-motion hook ──────────────────────────────────────────────────────
 
 function useReducedMotion() {
@@ -212,27 +211,14 @@ function useReducedMotion() {
 // ─── ThemeButton ──────────────────────────────────────────────────────────────
 
 const ThemeButton: React.FC = () => {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(THEME_KEY) as 'light' | 'dark' | null;
-    const actual =
-      stored ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    setIsDark(actual === 'dark');
-  }, []);
-
-  useEffect(() => {
-    const theme = isDark ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', theme);
-    document.documentElement.classList.toggle('dark', isDark);
-    localStorage.setItem(THEME_KEY, theme);
-  }, [isDark]);
+  const { theme, toggle } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
     <motion.button
       type="button"
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      onClick={() => setIsDark((d) => !d)}
+      onClick={toggle}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
       className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 shadow-sm hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"

@@ -19,7 +19,10 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+
+import { REPO_URL } from '../lib/constants';
+import { useTheme } from '../lib/useTheme';
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
@@ -67,26 +70,8 @@ const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 // ─── Theme selector ───────────────────────────────────────────────────────────
 
-const THEME_KEY = 'app:theme' as const;
-
-function getTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem(THEME_KEY) as 'light' | 'dark' | null) ?? 'light';
-}
-
-function applyTheme(t: 'light' | 'dark') {
-  const root = document.documentElement;
-  root.classList.toggle('dark', t === 'dark');
-  root.setAttribute('data-theme', t);
-  localStorage.setItem(THEME_KEY, t);
-}
-
 const ThemeSelector: React.FC = () => {
-  const [theme, setTheme] = useState<'light' | 'dark'>(getTheme);
-
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+  const { theme, setTheme } = useTheme();
 
   const options: { value: 'light' | 'dark'; icon: typeof faSun; label: string }[] = [
     { value: 'light', icon: faSun, label: 'Light' },
@@ -185,7 +170,7 @@ export const SettingsPage: React.FC = () => {
         ))}
         <Row label="Source code">
           <a
-            href="https://github.com/wreiske/meteor-react-tailwind-prettier-starter"
+            href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-blue-600 underline underline-offset-2 hover:text-blue-500 dark:text-blue-400"

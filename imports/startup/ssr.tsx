@@ -18,6 +18,7 @@ import { onPageLoad } from 'meteor/server-render';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 
+import { REPO_URL } from '../lib/constants';
 import { LandingPage } from '../ui/LandingPage';
 import { LoginForm } from '../ui/LoginForm';
 
@@ -29,8 +30,6 @@ const META_DESCRIPTION =
   'Production-ready full-stack React starter with Meteor 3.4, React 19, ' +
   'Tailwind CSS 4, TypeScript 5, passwordless magic link auth, real-time DDP, ' +
   'and server-side rendering with client hydration. Clone and ship.';
-
-const REPO_URL = 'https://github.com/wreiske/meteor-react-tailwind-prettier-starter';
 
 /** Schema.org structured data — helps search engines understand the software. */
 const LD_JSON = JSON.stringify({

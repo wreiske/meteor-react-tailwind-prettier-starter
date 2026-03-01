@@ -13,8 +13,6 @@
     "jsx": "react-jsx",
     "baseUrl": "./",
     "paths": {
-      "@api/*": ["imports/api/*"],
-      "@schemas/*": ["imports/schemas/*"],
       "@ui/*": ["imports/ui/*"],
       "@lib/*": ["imports/lib/*"]
     }

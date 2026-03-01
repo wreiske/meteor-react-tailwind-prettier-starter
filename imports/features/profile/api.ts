@@ -12,17 +12,9 @@ import { DDPRateLimiter } from 'meteor/ddp-rate-limiter';
 import { Meteor } from 'meteor/meteor';
 import { Mongo } from 'meteor/mongo';
 
-// ─── Data model ──────────────────────────────────────────────────────────────
+import { profileUpdateSchema, type UserProfileDoc } from './schema';
 
-export interface UserProfileDoc {
-  _id?: string;
-  userId: string; // 1-to-1 with Meteor.users
-  displayName: string; // chosen name shown in chat + profile page
-  bio: string; // short free-text
-  website: string; // optional URL
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { ProfileUpdateInput, UserProfileDoc } from './schema';
 
 export const UserProfiles = new Mongo.Collection<UserProfileDoc>('userProfiles');
 
@@ -54,22 +46,16 @@ if (Meteor.isServer) {
   Meteor.methods({
     async 'profile.update'(fields: { displayName?: string; bio?: string; website?: string }) {
       if (!this.userId) throw new Meteor.Error('not-authorized');
-      check(fields, Object);
-
-      const displayName = (fields.displayName ?? '').trim().slice(0, 50);
-      const bio = (fields.bio ?? '').trim().slice(0, 300);
-      const rawWebsite = (fields.website ?? '').trim().slice(0, 200);
-
-      // Basic URL validation — must be empty or start with http(s)://
-      if (rawWebsite && !/^https?:\/\/.+/.test(rawWebsite)) {
-        throw new Meteor.Error('invalid-website', 'Website must start with http:// or https://');
-      }
+      const result = profileUpdateSchema.safeParse(fields);
+      if (!result.success)
+        throw new Meteor.Error('validation', result.error.issues[0]?.message ?? 'Invalid input');
+      const { displayName, bio, website } = result.data;
 
       const now = new Date();
       await UserProfiles.upsertAsync(
         { userId: this.userId },
         {
-          $set: { displayName, bio, website: rawWebsite, updatedAt: now },
+          $set: { displayName, bio, website, updatedAt: now },
           $setOnInsert: { createdAt: now },
         },
       );
