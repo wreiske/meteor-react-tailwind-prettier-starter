@@ -10,7 +10,7 @@ Includes **real-time Chat**, **Live Polls**, **Reactive Todos**, and **User Prof
 
 | Stack       | Version              | Notes                                |
 | ----------- | -------------------- | ------------------------------------ |
-| Meteor      | 3.5-beta.3 (Node 22) | ESM, modern rspack build toolchain   |
+| Meteor      | 3.5-beta.4 (Node 22) | ESM, modern rspack build toolchain   |
 | React       | 19                   | Suspense / concurrent features ready |
 | TailwindCSS | 4.x                  | Oxide (Lightning CSS) engine         |
 | TypeScript  | 5.x                  | Strict mode                          |

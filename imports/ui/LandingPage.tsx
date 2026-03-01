@@ -682,7 +682,7 @@ export const LandingPage: React.FC = () => {
               aria-hidden="true"
             />
             <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-              Up-to-date · Meteor 3.5-beta.3 · React 19 · Tailwind CSS 4
+              Up-to-date · Meteor 3.5-beta.4 · React 19 · Tailwind CSS 4
             </span>
           </motion.div>
 

@@ -1,4 +1,4 @@
-accounts-base@3.2.0
+accounts-base@3.2.1-beta350.4
 accounts-passwordless@3.1.0
 allow-deny@2.1.0
 autoupdate@2.0.1
@@ -15,7 +15,7 @@ ddp@1.4.2
 ddp-client@3.1.1
 ddp-common@1.4.4
 ddp-rate-limiter@1.2.2
-ddp-server@3.1.3-beta350.3
+ddp-server@3.1.3-beta350.4
 diff-sequence@1.1.3
 dynamic-import@0.7.4
 ecmascript@0.17.0
@@ -41,7 +41,7 @@ minimongo@2.0.5
 modern-browsers@0.2.3
 modules@0.20.3
 modules-runtime@0.13.2
-mongo@2.3.0-beta350.3
+mongo@2.3.0-beta350.4
 mongo-decimal@0.2.0
 mongo-dev-server@1.1.1
 mongo-id@1.0.9
@@ -70,6 +70,6 @@ tracker@1.3.4
 typescript@5.9.3
 underscore@1.6.4
 url@1.3.5
-webapp@2.2.1-beta350.3
+webapp@2.2.1-beta350.4
 webapp-hashing@1.1.2
 zodern:types@1.0.13
