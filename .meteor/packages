@@ -1,5 +1,5 @@
 meteor-base@1.5.2
-mongo@2.2.0
+mongo@2.3.0-beta350.3
 react-meteor-data
 static-html@1.5.0
 typescript@5.9.3
@@ -19,3 +19,4 @@ standard-minifier-js@3.2.0
 dynamic-import@0.7.4
 underscore
 rspack@1.0.0
+server-render

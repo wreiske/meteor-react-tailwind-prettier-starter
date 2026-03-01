@@ -3,11 +3,14 @@ import '../imports/startup/client';
 
 import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
-import React from 'react';
-import { createRoot, Root } from 'react-dom/client';
+import React, { useEffect } from 'react';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 
+import { AppLayout } from '../imports/ui/AppLayout';
+import { LandingPage } from '../imports/ui/LandingPage';
 import { LoginForm } from '../imports/ui/LoginForm';
-import { TodosApp } from '../imports/ui/TodosApp';
+
+// ─── App (client-side rendered, /app and all non-root routes) ─────────────────
 
 const App: React.FC = () => {
   const user = useTracker(() => Meteor.user());
@@ -20,13 +23,52 @@ const App: React.FC = () => {
     );
   }
   if (!user) return <LoginForm />;
-  return <TodosApp />;
+  return <AppLayout />;
 };
 
-let root: Root | undefined;
+// ─── LandingPageWithRedirect (hydrates SSR content) ───────────────────────────
+//
+// Keeps `LandingPage` isomorphic by placing all Meteor/client logic here.
+// Responsibilities:
+//   • Provides the same React tree the server rendered so React can
+//     attach event listeners without re-rendering (true hydration).
+//   • Redirects to /app when a user is already logged in or logs in via
+//     the magic link token that accounts-passwordless reads from the URL hash.
+//   • Displays a translucent overlay while the token exchange is in flight.
+
+const LandingPageWithRedirect: React.FC = () => {
+  const user = useTracker(() => Meteor.user());
+  const loggingIn = useTracker(() => Meteor.loggingIn());
+
+  useEffect(() => {
+    if (user) window.location.replace('/app');
+  }, [user]);
+
+  return (
+    <>
+      <LandingPage />
+      {loggingIn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-neutral-950/80">
+          <p className="text-sm text-neutral-600 dark:text-neutral-300">Signing in…</p>
+        </div>
+      )}
+    </>
+  );
+};
+
+// ─── Entry point ──────────────────────────────────────────────────────────────
+
 Meteor.startup(() => {
   const el = document.getElementById('root');
   if (!el) return;
-  if (!root) root = createRoot(el);
-  root.render(<App />);
+
+  if (window.location.pathname === '/') {
+    // Hydrate the server-rendered landing page.
+    // React attaches listeners without discarding the server HTML,
+    // giving instant first contentful paint and zero layout shift.
+    hydrateRoot(el, <LandingPageWithRedirect />);
+  } else {
+    // All other routes (e.g. /app) are client-side rendered.
+    createRoot(el).render(<App />);
+  }
 });

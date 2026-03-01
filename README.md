@@ -1,26 +1,28 @@
 <div align="center">
 
-# Meteor 3.4 + React 19 + Tailwind CSS 4 + TypeScript Starter
+# Meteor 3.5 + React 19 + Tailwind CSS 4 + TypeScript Starter
 
 Modern, minimal boilerplate for building real‑time Meteor apps with React 19, Tailwind 4, and TypeScript.
 
+Includes **real-time Chat**, **Live Polls**, **Reactive Todos**, and **User Profiles** as ready-to-run examples showcasing Meteor's DDP.
+
 ▶️ Live demo: https://todo-sample.meteorapp.com
 
-| Stack       | Version       | Notes                                |
-| ----------- | ------------- | ------------------------------------ |
-| Meteor      | 3.4 (Node 22) | ESM, modern rspack build toolchain   |
-| React       | 19            | Suspense / concurrent features ready |
-| TailwindCSS | 4.x           | Oxide (Lightning CSS) engine         |
-| TypeScript  | 5.x           | Strict mode                          |
+| Stack       | Version              | Notes                                |
+| ----------- | -------------------- | ------------------------------------ |
+| Meteor      | 3.5-beta.3 (Node 22) | ESM, modern rspack build toolchain   |
+| React       | 19                   | Suspense / concurrent features ready |
+| TailwindCSS | 4.x                  | Oxide (Lightning CSS) engine         |
+| TypeScript  | 5.x                  | Strict mode                          |
 
-Includes passwordless (magic link) auth + a realtime Todo example.
+Includes passwordless (magic link) auth + real-time examples: **Chat**, **Polls**, **Todos**, and **User Profiles**.
 
 <br />
 
 ![Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4?logo=prettier&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![Node](https://img.shields.io/badge/Node-22.x-339933?logo=node.js&logoColor=white)
-![Meteor](https://img.shields.io/badge/Meteor-3.4--rc.1-DE4F4F?logo=meteor&logoColor=white)
+![Meteor](https://img.shields.io/badge/Meteor-3.5--beta.3-DE4F4F?logo=meteor&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.x-38B2AC?logo=tailwind-css&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
