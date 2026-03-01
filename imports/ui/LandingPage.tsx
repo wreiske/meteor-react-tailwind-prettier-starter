@@ -655,12 +655,12 @@ export const LandingPage: React.FC = () => {
               <FontAwesomeIcon icon={faGithub} aria-hidden="true" />
             </motion.a>
             <motion.a
-              href="/app"
+              href="/app?mode=signup"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="ml-1 inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             >
-              Try Demo →
+              Get Started →
             </motion.a>
           </nav>
         </div>
@@ -762,7 +762,7 @@ export const LandingPage: React.FC = () => {
               View on GitHub
             </motion.a>
             <motion.a
-              href="/app"
+              href="/app?mode=signup"
               whileHover={reduced ? {} : { scale: 1.06, y: -2 }}
               whileTap={{ scale: 0.95 }}
               className="relative inline-flex items-center gap-2.5 overflow-hidden rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
@@ -774,7 +774,7 @@ export const LandingPage: React.FC = () => {
                 transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.5 }}
                 aria-hidden="true"
               />
-              Try the Demo
+              Get Started Free
               <FontAwesomeIcon icon={faBolt} className="text-xs" aria-hidden="true" />
             </motion.a>
           </motion.div>

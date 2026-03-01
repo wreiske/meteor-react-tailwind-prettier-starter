@@ -19,6 +19,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 
 import { LandingPage } from '../ui/LandingPage';
+import { LoginForm } from '../ui/LoginForm';
 
 // ─── Static SEO content ───────────────────────────────────────────────────────
 
@@ -101,39 +102,86 @@ function buildHeadTags(extraTags = '') {
  * The `@types/meteor` declaration says `string | undefined`; trust the
  * runtime instead.
  */
-function extractPathname(rawUrl: unknown): string {
-  if (rawUrl == null) return '/';
-  if (rawUrl instanceof URL) return rawUrl.pathname;
-  try {
-    // new URL() with a base handles relative paths like "/" or "/app?q=1"
-    return new URL(String(rawUrl), 'http://localhost').pathname;
-  } catch {
-    return '/';
+interface ParsedUrl {
+  pathname: string;
+  query: Record<string, string>;
+}
+
+function extractUrl(rawUrl: unknown): ParsedUrl {
+  const fallback: ParsedUrl = { pathname: '/', query: {} };
+  if (rawUrl == null) return fallback;
+  // Meteor 3.5+ passes a parsed URL-like object with pathname + query
+  if (typeof rawUrl === 'object' && rawUrl !== null && 'pathname' in rawUrl) {
+    const obj = rawUrl as { pathname?: string; query?: Record<string, string> };
+    return {
+      pathname: obj.pathname || '/',
+      query: (obj.query && typeof obj.query === 'object' ? obj.query : {}) as Record<
+        string,
+        string
+      >,
+    };
   }
+  if (rawUrl instanceof URL) {
+    const q: Record<string, string> = {};
+    rawUrl.searchParams.forEach((v, k) => {
+      q[k] = v;
+    });
+    return { pathname: rawUrl.pathname, query: q };
+  }
+  if (typeof rawUrl === 'string') {
+    try {
+      const u = new URL(rawUrl, 'http://localhost');
+      const q: Record<string, string> = {};
+      u.searchParams.forEach((v, k) => {
+        q[k] = v;
+      });
+      return { pathname: u.pathname, query: q };
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
 }
 
 // ─── onPageLoad ───────────────────────────────────────────────────────────────
 
 onPageLoad((sink) => {
   const req = (sink as unknown as { request?: { url?: unknown } }).request;
-  const pathname = extractPathname(req?.url);
+  const { pathname, query } = extractUrl(req?.url);
 
   if (pathname === '/') {
     // ── Landing page: full SSR ──────────────────────────────────────────────
-    // `renderToString` is synchronous and safe for a purely presentational
-    // component like LandingPage (no Suspense boundaries, no async data).
-    const html = renderToString(<LandingPage />);
-
-    sink.appendToHead(buildHeadTags());
-
-    // Wrap in the root element React will hydrate client-side.
-    // Having real HTML here (not a JS-injected string) means search engines and
-    // server-side HTTP fetchers see the full content immediately.
-    sink.appendToBody(`<div id="root">${html}</div>`);
+    try {
+      const html = renderToString(<LandingPage />);
+      sink.appendToHead(buildHeadTags());
+      sink.appendToBody(`<div id="root">${html}</div>`);
+    } catch (err) {
+      console.error('[SSR] Landing page renderToString failed:', err);
+      sink.appendToHead(
+        [`<title>${esc(PAGE_TITLE)}</title>`, `<script>${THEME_INIT_SCRIPT}</script>`].join('\n'),
+      );
+      sink.appendToBody('<div id="root"></div>');
+    }
+  } else if (pathname.startsWith('/app')) {
+    // ── App routes: SSR the login form ─────────────────────────────────────
+    // Unauthenticated visitors see the LoginForm. Authenticated users
+    // will be swapped to AppLayout after hydration on the client.
+    const mode = query.mode === 'signup' ? 'signup' : 'login';
+    try {
+      const html = renderToString(<LoginForm initialMode={mode} />);
+      sink.appendToHead(
+        buildHeadTags(mode === 'signup' ? '<meta name="robots" content="index,follow" />' : ''),
+      );
+      sink.appendToBody(`<div id="root">${html}</div>`);
+    } catch (err) {
+      console.error('[SSR] LoginForm renderToString failed:', err);
+      sink.appendToHead(
+        [`<title>${esc(PAGE_TITLE)}</title>`, `<script>${THEME_INIT_SCRIPT}</script>`].join('\n'),
+      );
+      sink.appendToBody('<div id="root"></div>');
+    }
   } else {
-    // ── App routes: plain shell for CSR ────────────────────────────────────
-    // The React bundle mounts into this element via `createRoot`.
-    // The theme script still prevents FOWT when navigating directly to /app.
+    // ── Unknown routes: plain shell ────────────────────────────────────────
     sink.appendToHead(
       [`<title>${esc(PAGE_TITLE)}</title>`, `<script>${THEME_INIT_SCRIPT}</script>`].join('\n'),
     );

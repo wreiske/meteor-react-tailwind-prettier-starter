@@ -6,6 +6,7 @@ import { useTracker } from 'meteor/react-meteor-data';
 import React, { useEffect } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 
+import { InboxPage } from '../imports/features/inbox/InboxPage';
 import { AppLayout } from '../imports/ui/AppLayout';
 import { LandingPage } from '../imports/ui/LandingPage';
 import { LoginForm } from '../imports/ui/LoginForm';
@@ -67,8 +68,16 @@ Meteor.startup(() => {
     // React attaches listeners without discarding the server HTML,
     // giving instant first contentful paint and zero layout shift.
     hydrateRoot(el, <LandingPageWithRedirect />);
+  } else if (window.location.pathname === '/inbox') {
+    // Dev inbox — no auth required, no SSR to hydrate.
+    createRoot(el).render(<InboxPage />);
+  } else if (window.location.pathname.startsWith('/app')) {
+    // Hydrate the server-rendered LoginForm.
+    // The SSR handler renders <LoginForm> for /app routes; after hydration
+    // React can swap to <AppLayout> once the user logs in.
+    hydrateRoot(el, <App />);
   } else {
-    // All other routes (e.g. /app) are client-side rendered.
+    // Unknown routes — no SSR content to hydrate, mount fresh.
     createRoot(el).render(<App />);
   }
 });

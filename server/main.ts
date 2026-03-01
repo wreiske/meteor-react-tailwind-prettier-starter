@@ -7,5 +7,6 @@ import '../imports/features/todos/api';
 import '../imports/features/chat/api';
 import '../imports/features/polls/api';
 import '../imports/features/profile/api';
+import '../imports/features/inbox/api';
 
 console.log('Server startup - Meteor Starter');
