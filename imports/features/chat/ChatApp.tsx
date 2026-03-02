@@ -14,9 +14,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import { CHAT_MESSAGE_MAX, CHAT_ROOM_NAME_MAX } from '../../lib/constants';
 import { useMethod } from '../../lib/useMethod';
 import { Input } from '../../ui/Input';
+import { useRouter } from '../../ui/router';
+import { Tooltip } from '../../ui/Tooltip';
+import { UserProfiles } from '../profile/api';
+import { Avatar } from '../profile/Avatar';
 import { UsernameBadge } from '../profile/UsernameBadge';
-import { ChatMessages, ChatRooms } from './api';
-import { type ChatMessageDoc, type ChatRoomDoc } from './schema';
+import { ChatMessages, ChatPresence, ChatRooms, ChatTyping } from './api';
+import {
+  type ChatMessageDoc,
+  type ChatPresenceDoc,
+  type ChatRoomDoc,
+  type ChatTypingDoc,
+  REACTION_EMOJIS,
+} from './schema';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -78,6 +88,168 @@ function avatarColor(username: string): string {
   for (let i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
 }
+
+// ─── ReactionPicker ──────────────────────────────────────────────────────────
+
+const ReactionPicker: React.FC<{ onSelect: (emoji: string) => void }> = ({ onSelect }) => (
+  <div className="flex gap-0.5 rounded-lg border border-neutral-200 bg-white px-1 py-0.5 shadow-md dark:border-neutral-700 dark:bg-neutral-800">
+    {REACTION_EMOJIS.map((emoji) => (
+      <button
+        key={emoji}
+        type="button"
+        onClick={() => onSelect(emoji)}
+        className="rounded p-1 text-sm transition-transform hover:scale-125 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+      >
+        {emoji}
+      </button>
+    ))}
+  </div>
+);
+
+// ─── ReactionBar ─────────────────────────────────────────────────────────────
+
+const ReactionBar: React.FC<{
+  reactions: Record<string, string[]>;
+  currentUserId: string;
+  onToggle: (emoji: string) => void;
+}> = ({ reactions, currentUserId, onToggle }) => {
+  const entries = Object.entries(reactions).filter(([, users]) => users.length > 0);
+  const allUids = entries.flatMap(([, uids]) => uids);
+
+  const nameMap = useTracker(() => {
+    const m: Record<string, string> = {};
+    for (const uid of allUids) {
+      const p = UserProfiles.findOne({ userId: uid });
+      if (p?.displayName) m[uid] = p.displayName;
+    }
+    return m;
+  }, [allUids.join(',')]);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {entries.map(([emoji, userIds]) => {
+        const hasReacted = userIds.includes(currentUserId);
+        const names = userIds.map((uid) => nameMap[uid] || uid.slice(0, 8));
+        const tip =
+          names.length <= 5
+            ? names.join(', ')
+            : `${names.slice(0, 4).join(', ')} +${names.length - 4}`;
+        return (
+          <Tooltip key={emoji} content={tip}>
+            <button
+              type="button"
+              onClick={() => onToggle(emoji)}
+              className={[
+                'flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors',
+                hasReacted
+                  ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-950/50 dark:text-blue-300'
+                  : 'border-neutral-200 bg-neutral-50 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-400 dark:hover:bg-neutral-700',
+              ].join(' ')}
+            >
+              <span>{emoji}</span>
+              <span className="font-medium">{userIds.length}</span>
+            </button>
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── TypingIndicator ─────────────────────────────────────────────────────────
+
+const TypingIndicator: React.FC<{ typers: ChatTypingDoc[] }> = ({ typers }) => {
+  const names = useTracker(() => {
+    return typers.map((t) => {
+      const profile = UserProfiles.findOne({ userId: t.userId });
+      return profile?.displayName || t.username;
+    });
+  }, [typers]);
+
+  if (names.length === 0) return null;
+
+  let text: string;
+  if (names.length === 1) {
+    text = `${names[0]} is typing`;
+  } else if (names.length === 2) {
+    text = `${names[0]} and ${names[1]} are typing`;
+  } else {
+    const others = names.length - 2;
+    text = `${names[0]}, ${names[1]}, and ${others} ${others === 1 ? 'other' : 'others'} are typing`;
+  }
+
+  return (
+    <div className="flex h-6 shrink-0 items-center gap-1.5 px-4 text-xs text-neutral-400 dark:text-neutral-500">
+      <span className="inline-flex items-center gap-[3px]">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="inline-block h-1 w-1 rounded-full bg-current"
+            style={{
+              animation: 'typing-dot 1.4s infinite',
+              animationDelay: `${i * 0.2}s`,
+            }}
+          />
+        ))}
+      </span>
+      <span>{text}</span>
+    </div>
+  );
+};
+
+// ─── UserList ────────────────────────────────────────────────────────────────
+
+const UserList: React.FC<{ presence: ChatPresenceDoc[] }> = ({ presence }) => {
+  const { navigate } = useRouter();
+
+  const users = useTracker(() => {
+    const seen = new Set<string>();
+    return presence
+      .filter((p) => {
+        if (seen.has(p.userId)) return false;
+        seen.add(p.userId);
+        return true;
+      })
+      .map((p) => {
+        const profile = UserProfiles.findOne({ userId: p.userId });
+        return {
+          userId: p.userId,
+          displayName: profile?.displayName || p.username,
+          seed: p.username,
+        };
+      });
+  }, [presence]);
+
+  return (
+    <aside className="hidden w-48 shrink-0 flex-col border-l border-neutral-200 bg-neutral-50 lg:flex dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="flex h-12 items-center px-3">
+        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          Online &mdash; {users.length}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-2 pb-2">
+        {users.map((u) => (
+          <button
+            key={u.userId}
+            type="button"
+            onClick={() => navigate(`/app/profile/${u.userId}`)}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          >
+            <div className="relative">
+              <Avatar seed={u.seed} size="sm" />
+              <span className="absolute -bottom-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-neutral-50 bg-green-500 dark:border-neutral-900" />
+            </div>
+            <span className="truncate text-sm text-neutral-700 dark:text-neutral-300">
+              {u.displayName}
+            </span>
+          </button>
+        ))}
+      </div>
+    </aside>
+  );
+};
 
 // ─── RoomList ─────────────────────────────────────────────────────────────────
 
@@ -230,12 +402,23 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isReady }) => {
                   </span>
                 </div>
                 {group.messages.map((msg) => (
-                  <p
-                    key={msg._id}
-                    className="mt-0.5 break-words text-sm text-neutral-800 dark:text-neutral-200"
-                  >
-                    {msg.text}
-                  </p>
+                  <div key={msg._id} className="group/msg relative -mx-1 rounded px-1 py-0.5">
+                    <div className="pointer-events-none absolute -top-3 right-0 z-10 opacity-0 transition-opacity group-hover/msg:pointer-events-auto group-hover/msg:opacity-100">
+                      <ReactionPicker
+                        onSelect={(emoji) => Meteor.call('chat.toggleReaction', msg._id, emoji)}
+                      />
+                    </div>
+                    <p className="break-words text-sm text-neutral-800 dark:text-neutral-200">
+                      {msg.text}
+                    </p>
+                    {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                      <ReactionBar
+                        reactions={msg.reactions}
+                        currentUserId={Meteor.userId() ?? ''}
+                        onToggle={(emoji) => Meteor.call('chat.toggleReaction', msg._id, emoji)}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -257,12 +440,40 @@ interface MessageInputProps {
 const MessageInput: React.FC<MessageInputProps> = ({ roomId, roomName }) => {
   const [text, setText] = useState('');
   const sendMessage = useMethod<[string, string]>('chat.sendMessage');
+  const typingTimeout = useRef<number | null>(null);
+  const isTypingRef = useRef(false);
+
+  const setTyping = (typing: boolean) => {
+    if (typing !== isTypingRef.current) {
+      isTypingRef.current = typing;
+      Meteor.call('chat.setTyping', roomId, typing);
+    }
+  };
+
+  const handleTyping = () => {
+    setTyping(true);
+    if (typingTimeout.current) window.clearTimeout(typingTimeout.current);
+    typingTimeout.current = window.setTimeout(() => setTyping(false), 3_000);
+  };
+
+  // Clean up typing state on unmount or room change
+  useEffect(() => {
+    return () => {
+      if (typingTimeout.current) window.clearTimeout(typingTimeout.current);
+      if (isTypingRef.current) {
+        Meteor.call('chat.setTyping', roomId, false);
+        isTypingRef.current = false;
+      }
+    };
+  }, [roomId]);
 
   const send = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
     const msg = text;
     setText('');
+    setTyping(false);
+    if (typingTimeout.current) window.clearTimeout(typingTimeout.current);
     sendMessage.call(roomId, msg);
   };
 
@@ -273,7 +484,11 @@ const MessageInput: React.FC<MessageInputProps> = ({ roomId, roomName }) => {
     >
       <Input
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value);
+          if (e.target.value.trim()) handleTyping();
+          else setTyping(false);
+        }}
         placeholder={`Message #${roomName}`}
         className="flex-1 dark:bg-neutral-800"
         maxLength={CHAT_MESSAGE_MAX}
@@ -320,13 +535,37 @@ export const ChatApp: React.FC = () => {
     if (!selectedRoomId) return { messages: [], messagesReady: false };
     const handle = Meteor.subscribe('chat.messages', selectedRoomId, 100);
     const msgs = ChatMessages.find({ roomId: selectedRoomId }).fetch();
-    // Subscribe to profiles for every message author so UsernameBadge can resolve displayNames
-    const uids = [...new Set(msgs.map((m) => m.userId))];
+    // Subscribe to profiles for every message author + reactor so tooltips resolve displayNames
+    const uidSet = new Set(msgs.map((m) => m.userId));
+    msgs.forEach((m) => {
+      if (m.reactions) {
+        Object.values(m.reactions).forEach((uids) => uids.forEach((uid) => uidSet.add(uid)));
+      }
+    });
+    const uids = [...uidSet];
     if (uids.length > 0) Meteor.subscribe('profile.byIds', uids);
     return {
       messages: msgs,
       messagesReady: handle.ready(),
     };
+  }, [selectedRoomId]);
+
+  // Typing indicators
+  const typers = useTracker(() => {
+    if (!selectedRoomId) return [];
+    Meteor.subscribe('chat.typing', selectedRoomId);
+    return ChatTyping.find({ roomId: selectedRoomId }).fetch();
+  }, [selectedRoomId]);
+
+  // Online presence
+  const presence = useTracker(() => {
+    if (!selectedRoomId) return [];
+    Meteor.subscribe('chat.presence', selectedRoomId);
+    const all = ChatPresence.find({ roomId: selectedRoomId }).fetch();
+    // Subscribe to profiles for online users
+    const pUids = [...new Set(all.map((p) => p.userId))];
+    if (pUids.length > 0) Meteor.subscribe('profile.byIds', pUids);
+    return all;
   }, [selectedRoomId]);
 
   const selectedRoom = rooms.find((r) => r._id === selectedRoomId);
@@ -360,9 +599,13 @@ export const ChatApp: React.FC = () => {
         {selectedRoom ? (
           // overflow-hidden is required for the inner flex-1 overflow-y-auto MessageList
           // to be correctly bounded within this flex column
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <MessageList messages={messages} isReady={messagesReady} />
-            <MessageInput roomId={selectedRoom._id!} roomName={selectedRoom.name} />
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+              <MessageList messages={messages} isReady={messagesReady} />
+              <TypingIndicator typers={typers} />
+              <MessageInput roomId={selectedRoom._id!} roomName={selectedRoom.name} />
+            </div>
+            <UserList presence={presence} />
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center">

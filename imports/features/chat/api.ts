@@ -15,16 +15,22 @@ import { Mongo } from 'meteor/mongo';
 import {
   type ChatMessageDoc,
   chatMessageTextSchema,
+  type ChatPresenceDoc,
   type ChatRoomDoc,
   chatRoomNameSchema,
+  type ChatTypingDoc,
+  messageIdSchema,
   messageLimitSchema,
+  reactionEmojiSchema,
   roomIdSchema,
 } from './schema';
 
-export type { ChatMessageDoc, ChatRoomDoc } from './schema';
+export type { ChatMessageDoc, ChatPresenceDoc, ChatRoomDoc, ChatTypingDoc } from './schema';
 
 export const ChatRooms = new Mongo.Collection<ChatRoomDoc>('chatRooms');
 export const ChatMessages = new Mongo.Collection<ChatMessageDoc>('chatMessages');
+export const ChatTyping = new Mongo.Collection<ChatTypingDoc>('chatTyping');
+export const ChatPresence = new Mongo.Collection<ChatPresenceDoc>('chatPresence');
 
 // ─── Server ───────────────────────────────────────────────────────────────────
 
@@ -33,6 +39,18 @@ if (Meteor.isServer) {
     // Indexes
     await ChatMessages.createIndexAsync({ roomId: 1, createdAt: 1 });
     await ChatRooms.createIndexAsync({ createdAt: 1 });
+    await ChatTyping.createIndexAsync({ roomId: 1, userId: 1 }, { unique: true });
+    await ChatPresence.createIndexAsync({ roomId: 1, connectionId: 1 }, { unique: true });
+
+    // Clean stale presence/typing from previous runs
+    await ChatPresence.removeAsync({});
+    await ChatTyping.removeAsync({});
+
+    // Periodically clean stale typing entries (> 5 s)
+    Meteor.setInterval(async () => {
+      const cutoff = new Date(Date.now() - 5_000);
+      await ChatTyping.removeAsync({ updatedAt: { $lt: cutoff } });
+    }, 3_000);
 
     // Seed a default "general" room once
     const count = await ChatRooms.rawCollection().countDocuments();
@@ -41,13 +59,21 @@ if (Meteor.isServer) {
     }
 
     // Rate limiting
-    const METHODS = ['chat.sendMessage', 'chat.createRoom'];
+    const METHODS = ['chat.sendMessage', 'chat.createRoom', 'chat.toggleReaction'];
     DDPRateLimiter.addRule(
       {
         name: (n) => METHODS.includes(n),
         userId: () => true,
       },
       20,
+      10_000,
+    );
+    DDPRateLimiter.addRule(
+      {
+        name: (n) => n === 'chat.setTyping',
+        userId: () => true,
+      },
+      30,
       10_000,
     );
   });
@@ -64,6 +90,35 @@ if (Meteor.isServer) {
     check(roomId, String);
     const safeLimit = messageLimitSchema.parse(limit);
     return ChatMessages.find({ roomId }, { sort: { createdAt: -1 }, limit: safeLimit });
+  });
+
+  // Publish who is currently typing in a room (excludes the subscriber)
+  Meteor.publish('chat.typing', function (roomId: string) {
+    if (!this.userId) return this.ready();
+    check(roomId, String);
+    return ChatTyping.find({ roomId, userId: { $ne: this.userId } });
+  });
+
+  // Publish presence (who is online) for a room – lifecycle-managed
+  Meteor.publish('chat.presence', async function (roomId: string) {
+    if (!this.userId) return this.ready();
+    check(roomId, String);
+
+    const connId = this.connection?.id ?? '';
+    const user = await Meteor.users.findOneAsync(this.userId);
+    const email = user?.emails?.[0]?.address ?? '';
+    const username = email.split('@')[0] || 'user';
+
+    await ChatPresence.upsertAsync(
+      { roomId, connectionId: connId },
+      { $set: { userId: this.userId, username, joinedAt: new Date() } },
+    );
+
+    this.onStop(async () => {
+      await ChatPresence.removeAsync({ roomId, connectionId: connId });
+    });
+
+    return ChatPresence.find({ roomId });
   });
 
   Meteor.methods({
@@ -97,6 +152,49 @@ if (Meteor.isServer) {
       const existing = await ChatRooms.findOneAsync({ name: clean });
       if (existing) throw new Meteor.Error('conflict', `Room "${clean}" already exists`);
       return ChatRooms.insertAsync({ name: clean, createdAt: new Date(), createdBy: this.userId });
+    },
+
+    async 'chat.toggleReaction'(messageId: string, emoji: string) {
+      if (!this.userId) throw new Meteor.Error('not-authorized');
+      const mid = messageIdSchema.parse(messageId);
+      const validEmoji = reactionEmojiSchema.parse(emoji);
+
+      const msg = await ChatMessages.findOneAsync(mid);
+      if (!msg) throw new Meteor.Error('not-found', 'Message not found');
+
+      const users = msg.reactions?.[validEmoji] ?? [];
+      if (users.includes(this.userId)) {
+        await ChatMessages.updateAsync(mid, {
+          $pull: { [`reactions.${validEmoji}`]: this.userId },
+        });
+        // Remove the key entirely if the array is now empty
+        const updated = await ChatMessages.findOneAsync(mid);
+        if (updated?.reactions?.[validEmoji]?.length === 0) {
+          await ChatMessages.updateAsync(mid, {
+            $unset: { [`reactions.${validEmoji}`]: 1 },
+          });
+        }
+      } else {
+        await ChatMessages.updateAsync(mid, {
+          $addToSet: { [`reactions.${validEmoji}`]: this.userId },
+        });
+      }
+    },
+
+    async 'chat.setTyping'(roomId: string, isTyping: boolean) {
+      if (!this.userId) throw new Meteor.Error('not-authorized');
+      const rid = roomIdSchema.parse(roomId);
+      if (isTyping) {
+        const user = await Meteor.users.findOneAsync(this.userId);
+        const email = user?.emails?.[0]?.address ?? '';
+        const username = email.split('@')[0] || 'user';
+        await ChatTyping.upsertAsync(
+          { roomId: rid, userId: this.userId },
+          { $set: { username, updatedAt: new Date() } },
+        );
+      } else {
+        await ChatTyping.removeAsync({ roomId: rid, userId: this.userId });
+      }
     },
   });
 }

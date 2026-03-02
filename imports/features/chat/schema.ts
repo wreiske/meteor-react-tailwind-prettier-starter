@@ -7,6 +7,11 @@ import { z } from 'zod';
 
 import { CHAT_MESSAGE_MAX, CHAT_ROOM_NAME_MAX } from '../../lib/constants';
 
+// ─── Reaction emojis ──────────────────────────────────────────────────────────
+
+export const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🎉'] as const;
+export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
+
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 export const chatMessageTextSchema = z
@@ -26,6 +31,13 @@ export const chatRoomNameSchema = z
 
 export const roomIdSchema = z.string().min(1);
 export const messageLimitSchema = z.coerce.number().int().min(1).max(200).default(50);
+export const messageIdSchema = z.string().min(1);
+export const reactionEmojiSchema = z
+  .string()
+  .refine(
+    (v): v is ReactionEmoji => (REACTION_EMOJIS as readonly string[]).includes(v),
+    'Invalid reaction emoji',
+  );
 
 // ─── Document types ───────────────────────────────────────────────────────────
 
@@ -43,4 +55,22 @@ export interface ChatMessageDoc {
   username: string;
   text: string;
   createdAt: Date;
+  reactions?: Record<string, string[]>;
+}
+
+export interface ChatTypingDoc {
+  _id?: string;
+  roomId: string;
+  userId: string;
+  username: string;
+  updatedAt: Date;
+}
+
+export interface ChatPresenceDoc {
+  _id?: string;
+  roomId: string;
+  userId: string;
+  username: string;
+  connectionId: string;
+  joinedAt: Date;
 }

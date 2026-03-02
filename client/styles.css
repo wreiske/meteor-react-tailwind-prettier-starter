@@ -18,3 +18,16 @@ button:disabled,
 [role='button'][aria-disabled='true'] {
   cursor: not-allowed;
 }
+
+/* Typing indicator dots animation */
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
