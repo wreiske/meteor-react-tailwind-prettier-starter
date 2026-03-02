@@ -113,7 +113,13 @@ const SidebarContent: React.FC = () => {
   return (
     <div className="flex h-full flex-col">
       {/* Logo / brand */}
-      <div className="flex h-16 shrink-0 items-center border-b border-neutral-200 px-3 dark:border-neutral-800">
+      <div
+        className={[
+          'flex h-16 shrink-0 items-center border-b border-neutral-200 px-3 dark:border-neutral-800',
+          isExpanded ? '' : 'justify-center',
+        ].join(' ')}
+      >
+        {' '}
         <a
           href="/app"
           className="flex min-w-0 items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40"
