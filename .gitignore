@@ -21,3 +21,7 @@ _build
 */build-assets
 */build-chunks
 .rsdoctor
+
+# Playwright
+/test-results/
+/playwright-report/

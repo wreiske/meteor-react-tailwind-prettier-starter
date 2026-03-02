@@ -20,14 +20,18 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import {
   faBolt,
   faChartBar,
+  faChevronLeft,
+  faChevronRight,
   faCircleUser,
   faCode,
   faComments,
   faGlobe,
+  faImages,
   faKey,
   faLayerGroup,
   faList,
   faPalette,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -40,7 +44,7 @@ import {
   useSpring,
   useTransform,
 } from 'motion/react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { REPO_URL } from '../lib/constants';
 import { useTheme } from '../lib/useTheme';
@@ -187,6 +191,65 @@ const DEMOS: Demo[] = [
     tag: 'Public · Editable · Linked from chat',
     gradient: 'from-rose-500/20 to-pink-500/5',
     glow: 'group-hover:shadow-rose-500/20',
+  },
+];
+
+interface GalleryItem {
+  src: string;
+  alt: string;
+  label: string;
+}
+
+const GALLERY: GalleryItem[] = [
+  {
+    src: '/screenshots/landing-hero-light.png',
+    alt: 'Landing page hero — light mode',
+    label: 'Landing (Light)',
+  },
+  {
+    src: '/screenshots/landing-hero-dark.png',
+    alt: 'Landing page hero — dark mode',
+    label: 'Landing (Dark)',
+  },
+  {
+    src: '/screenshots/todos-light.png',
+    alt: 'Todos app — light mode',
+    label: 'Todos (Light)',
+  },
+  {
+    src: '/screenshots/todos-dark.png',
+    alt: 'Todos app — dark mode',
+    label: 'Todos (Dark)',
+  },
+  {
+    src: '/screenshots/chat-light.png',
+    alt: 'Real-time chat — light mode',
+    label: 'Chat (Light)',
+  },
+  {
+    src: '/screenshots/chat-dark.png',
+    alt: 'Real-time chat — dark mode',
+    label: 'Chat (Dark)',
+  },
+  {
+    src: '/screenshots/polls-light.png',
+    alt: 'Live polls — light mode',
+    label: 'Polls (Light)',
+  },
+  {
+    src: '/screenshots/polls-dark.png',
+    alt: 'Live polls — dark mode',
+    label: 'Polls (Dark)',
+  },
+  {
+    src: '/screenshots/login-light.png',
+    alt: 'Login page — light mode',
+    label: 'Login (Light)',
+  },
+  {
+    src: '/screenshots/login-dark.png',
+    alt: 'Login page — dark mode',
+    label: 'Login (Dark)',
   },
 ];
 
@@ -583,6 +646,189 @@ const AnimatedWord: React.FC<WordProps> = ({ word, index, reduced, highlight }) 
   </motion.span>
 );
 
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
+
+interface LightboxProps {
+  items: GalleryItem[];
+  index: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+const Lightbox: React.FC<LightboxProps> = ({ items, index, onClose, onPrev, onNext }) => {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') onPrev();
+      if (e.key === 'ArrowRight') onNext();
+    };
+    window.addEventListener('keydown', h);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', h);
+      document.body.style.overflow = '';
+    };
+  }, [onClose, onPrev, onNext]);
+
+  const item = items[index];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={item.alt}
+    >
+      {/* Close */}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close lightbox"
+        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
+      >
+        <FontAwesomeIcon icon={faXmark} className="text-lg" />
+      </button>
+
+      {/* Prev */}
+      {items.length > 1 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPrev();
+          }}
+          aria-label="Previous screenshot"
+          className="absolute left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
+        >
+          <FontAwesomeIcon icon={faChevronLeft} />
+        </button>
+      )}
+
+      {/* Image */}
+      <motion.img
+        key={item.src}
+        src={item.src}
+        alt={item.alt}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85vh] max-w-[90vw] rounded-xl shadow-2xl"
+      />
+
+      {/* Next */}
+      {items.length > 1 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onNext();
+          }}
+          aria-label="Next screenshot"
+          className="absolute right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
+        >
+          <FontAwesomeIcon icon={faChevronRight} />
+        </button>
+      )}
+
+      {/* Caption */}
+      <div className="absolute bottom-6 text-center text-sm text-white/70">
+        {item.label} — {index + 1} / {items.length}
+      </div>
+    </motion.div>
+  );
+};
+
+// ─── Gallery grid ────────────────────────────────────────────────────────────
+
+const GallerySection: React.FC<{ reduced: boolean }> = ({ reduced }) => {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const close = useCallback(() => setLightboxIndex(null), []);
+  const prev = useCallback(
+    () => setLightboxIndex((i) => (i !== null ? (i - 1 + GALLERY.length) % GALLERY.length : null)),
+    [],
+  );
+  const next = useCallback(
+    () => setLightboxIndex((i) => (i !== null ? (i + 1) % GALLERY.length : null)),
+    [],
+  );
+
+  return (
+    <section aria-labelledby="gallery-heading" className="relative overflow-hidden py-24">
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-emerald-50/30 to-transparent dark:via-emerald-950/10"
+        aria-hidden="true"
+      />
+      <div className="relative mx-auto max-w-5xl px-6">
+        <SectionHeading
+          id="gallery-heading"
+          title="See it in action"
+          subtitle="Light and dark themes, responsive layouts, and a polished UI — click to expand."
+          reduced={reduced}
+        />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {GALLERY.map((item, i) => (
+            <motion.button
+              key={item.src}
+              type="button"
+              initial={reduced ? false : { opacity: 0, y: 30, scale: 0.96 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.45, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={reduced ? {} : { y: -4, scale: 1.02 }}
+              onClick={() => setLightboxIndex(i)}
+              className="group relative cursor-pointer overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-sm transition-shadow hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-neutral-800/80 dark:bg-neutral-900/80"
+              aria-label={`View screenshot: ${item.label}`}
+            >
+              <img
+                src={item.src}
+                alt={item.alt}
+                loading="lazy"
+                className="aspect-video w-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/20">
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileHover={{ opacity: 1, scale: 1 }}
+                  className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-neutral-800 opacity-0 shadow-sm transition-opacity duration-200 group-hover:opacity-100"
+                >
+                  <FontAwesomeIcon icon={faImages} className="mr-1.5" aria-hidden="true" />
+                  Expand
+                </motion.span>
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {item.label}
+                </p>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {lightboxIndex !== null && (
+          <Lightbox
+            items={GALLERY}
+            index={lightboxIndex}
+            onClose={close}
+            onPrev={prev}
+            onNext={next}
+          />
+        )}
+      </AnimatePresence>
+    </section>
+  );
+};
+
 // ─── LandingPage (root) ───────────────────────────────────────────────────────
 
 export const LandingPage: React.FC = () => {
@@ -855,6 +1101,9 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* ── Screenshots gallery ── */}
+      <GallerySection reduced={reduced} />
 
       {/* ── Quick Start ── */}
       <section aria-labelledby="quickstart-heading" className="py-24">

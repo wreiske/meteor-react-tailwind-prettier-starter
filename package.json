@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "screenshots": "npx playwright test e2e/screenshots.spec.ts",
     "prepare": "node scripts/prepare-husky.cjs"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "@meteorjs/rspack": "^1.0.0",
+    "@playwright/test": "^1.58.2",
     "@rsdoctor/rspack-plugin": "^1.2.3",
     "@rspack/cli": "^1.7.1",
     "@rspack/core": "^1.7.1",

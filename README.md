@@ -43,14 +43,19 @@ Includes **real-time Chat**, **Live Polls**, **Reactive Todos**, and **User Prof
 
 <div align="center">
 
-| Login                                                                      | Magic Link (Token Entry)                                                                                       | Empty Todos                                                                        |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| <img src="./screenshots/todo-sample.png" alt="Login screen" width="300" /> | <img src="./screenshots/todo-sample (1).png" alt="Passwordless token entry confirmation screen" width="300" /> | <img src="./screenshots/todo-sample (2).png" alt="Empty todos list" width="300" /> |
+| Landing (Light)                                                                                       | Landing (Dark)                                                                                      | Login                                                                                        |
+| ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| <img src="./public/screenshots/landing-hero-light.png" alt="Landing page — light mode" width="300" /> | <img src="./public/screenshots/landing-hero-dark.png" alt="Landing page — dark mode" width="300" /> | <img src="./public/screenshots/login-light.png" alt="Login page — light mode" width="300" /> |
 
-<br />
+| Todos                                                                                       | Chat                                                                                            | Polls                                                                                        |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| <img src="./public/screenshots/todos-light.png" alt="Todos app — light mode" width="300" /> | <img src="./public/screenshots/chat-light.png" alt="Real-time chat — light mode" width="300" /> | <img src="./public/screenshots/polls-light.png" alt="Live polls — light mode" width="300" /> |
 
-<img src="./screenshots/todo-sample (3).png" alt="Todos populated (variant 1)" width="300" />
-<img src="./screenshots/todo-sample (4).png" alt="Todos populated (variant 2)" width="300" />
+| Todos (Dark)                                                                              | Chat (Dark)                                                                                   | Polls (Dark)                                                                               |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| <img src="./public/screenshots/todos-dark.png" alt="Todos app — dark mode" width="300" /> | <img src="./public/screenshots/chat-dark.png" alt="Real-time chat — dark mode" width="300" /> | <img src="./public/screenshots/polls-dark.png" alt="Live polls — dark mode" width="300" /> |
+
+> **Regenerate screenshots**: `npm run screenshots` (requires the dev server running on `localhost:3000`)
 
 </div>
 
@@ -146,6 +151,7 @@ npm run typecheck             # Check TypeScript
 npm run format                # Check Prettier formatting
 npm test                      # Run Vitest tests
 npm run test:watch            # Run tests in watch mode
+npm run screenshots           # Capture screenshots with Playwright
 
 # Fixes
 npm run lint:fix              # Auto-fix lint issues
